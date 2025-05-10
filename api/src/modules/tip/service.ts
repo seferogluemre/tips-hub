@@ -1,5 +1,5 @@
 import prisma from "../../core/prisma";
-import { TipCreatePayload } from "./types";
+import { TipCreatePayload, TipUpdatePayload } from "./types";
 
 export const TipService = {
   async create(data: TipCreatePayload) {
@@ -7,11 +7,7 @@ export const TipService = {
       data: {
         title: data.title,
         content: data.content,
-        author: {
-          connect: {
-            id: "default-author-id",
-          },
-        },
+        authorId: data.authorId,
       },
       include: {
         tags: {
@@ -92,24 +88,22 @@ export const TipService = {
     });
   },
 
-  async update(id: string, data: Partial<TipCreatePayload>) {
+  async update(id: string, data: TipUpdatePayload) {
     return prisma.tip.update({
       where: { id },
       data: {
         title: data.title,
         content: data.content,
-        tags: data.tags
-          ? {
-              set: [],
-              connect: data.tags.map((id: number) => ({ id })),
-            }
-          : undefined,
       },
       include: {
         tags: {
-          select: {
-            id: true,
-            name: true,
+          include: {
+            tag: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         author: {

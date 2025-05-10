@@ -1,6 +1,5 @@
-import { t } from 'elysia';
+import { t } from "elysia";
 
-export const uuidValidation = t.RegExp(
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-    { description: 'UUID v4' }
-);
+export const uuidValidation = t.RegExp(/^c[a-z0-9]{21,}$/, {
+  description: "CUID format",
+});

@@ -8,7 +8,7 @@ import {
 } from "./dtos";
 import { TipService } from "./service";
 
-export const tipController = new Elysia({ prefix: "/tips" })
+export const tipController = new Elysia({ prefix: "/api/tips" })
   .get(
     "/",
     async ({ query }) => {
@@ -16,8 +16,11 @@ export const tipController = new Elysia({ prefix: "/tips" })
       return {
         data: tips.map((tip) => ({
           ...tip,
-          tags: tip.tags || [],
-          author: tip.author || { id: "", name: "" },
+          tags: tip.tags.map((t) => t.tag),
+          author: {
+            id: tip.author.id,
+            name: tip.author.name || "",
+          },
         })),
         meta: {
           page: Number(query.page) || 1,
@@ -26,7 +29,13 @@ export const tipController = new Elysia({ prefix: "/tips" })
         },
       };
     },
-    tipIndexDto
+    {
+      ...tipIndexDto,
+      detail: {
+        ...tipIndexDto.detail,
+        tags: ["Tips"],
+      },
+    }
   )
   .post(
     "/",
@@ -47,7 +56,13 @@ export const tipController = new Elysia({ prefix: "/tips" })
         },
       };
     },
-    tipCreateDto
+    {
+      ...tipCreateDto,
+      detail: {
+        ...tipCreateDto.detail,
+        tags: ["Tips"],
+      },
+    }
   )
   .get(
     "/:uuid",
@@ -65,7 +80,13 @@ export const tipController = new Elysia({ prefix: "/tips" })
         },
       };
     },
-    tipShowDto
+    {
+      ...tipShowDto,
+      detail: {
+        ...tipShowDto.detail,
+        tags: ["Tips"],
+      },
+    }
   )
   .put(
     "/:uuid",
@@ -76,11 +97,20 @@ export const tipController = new Elysia({ prefix: "/tips" })
       }
       return {
         ...tip,
-        tags: tip.tags || [],
-        author: tip.author || { id: "", name: "" },
+        tags: tip.tags.map((t) => t.tag),
+        author: {
+          id: tip.author.id,
+          name: tip.author.name || "",
+        },
       };
     },
-    tipUpdateDto
+    {
+      ...tipUpdateDto,
+      detail: {
+        ...tipUpdateDto.detail,
+        tags: ["Tips"],
+      },
+    }
   )
   .delete(
     "/:uuid",
@@ -88,5 +118,11 @@ export const tipController = new Elysia({ prefix: "/tips" })
       await TipService.delete(params.uuid);
       return { message: "Tip deleted successfully" };
     },
-    tipDestroyDto
+    {
+      ...tipDestroyDto,
+      detail: {
+        ...tipDestroyDto.detail,
+        tags: ["Tips"],
+      },
+    }
   );
