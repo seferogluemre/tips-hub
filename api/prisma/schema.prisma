@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator prismabox {
+  provider                    = "prismabox"
+  output                      = "./prismabox"
+  typeboxImportVariableName   = "t"
+  typeboxImportDependencyName = "elysia"
+  additionalProperties        = true
+  inputModel                  = true
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  tips      Tip[] // Kullanıcının yazdığı tipler
+  comments  Comment[] // Kullanıcının yaptığı yorumlar
+  createdAt DateTime  @default(now())
+}
+
+model Tip {
+  id        String    @id @default(cuid())
+  title     String
+  content   String
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  String
+  tags      TipTag[] // Many-to-many bağlantı tablosu
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+}
+
+model Tag {
+  id   String   @id @default(cuid())
+  name String   @unique
+  tips TipTag[] // Tiplerle olan bağlantı
+}
+
+model TipTag {
+  id    String @id @default(cuid())
+  tip   Tip    @relation(fields: [tipId], references: [id])
+  tipId String
+
+  tag   Tag    @relation(fields: [tagId], references: [id])
+  tagId String
+
+  @@unique([tipId, tagId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  tip       Tip      @relation(fields: [tipId], references: [id])
+  tipId     String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
+}
