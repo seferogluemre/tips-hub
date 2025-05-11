@@ -56,6 +56,12 @@ export const authService = {
         token.substring(0, 15) + "..."
       );
       localStorage.setItem("auth_token", token);
+
+      // UserId'yi localStorage'a kaydet
+      if (response.data?.user?.id) {
+        localStorage.setItem("userId", response.data.user.id);
+        console.log("UserId kaydedildi:", response.data.user.id);
+      }
     } else {
       console.error("Token bulunamadı! API yanıtı:", response.data);
     }
@@ -101,6 +107,12 @@ export const authService = {
         token.substring(0, 15) + "..."
       );
       localStorage.setItem("auth_token", token);
+
+      // UserId'yi localStorage'a kaydet
+      if (response.data?.user?.id) {
+        localStorage.setItem("userId", response.data.user.id);
+        console.log("UserId kaydedildi:", response.data.user.id);
+      }
     } else {
       console.error("Token bulunamadı! API yanıtı:", response.data);
     }
@@ -115,9 +127,10 @@ export const authService = {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Her durumda token'ı temizle
+      // Her durumda token'ı ve userId'yi temizle
       localStorage.removeItem("auth_token");
-      console.log("Token temizlendi");
+      localStorage.removeItem("userId");
+      console.log("Token ve userId temizlendi");
     }
   },
 
@@ -132,5 +145,11 @@ export const authService = {
   getToken: (): string | null => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("auth_token");
+  },
+
+  // UserId'yi getir
+  getUserId: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("userId");
   },
 };

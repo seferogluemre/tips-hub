@@ -4,6 +4,21 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
+  tips?: UserTip[];
+  comments?: UserComment[];
+  createdAt?: string;
+}
+
+export interface UserTip {
+  id: string;
+  title: string;
+  createdAt: string;
+}
+
+export interface UserComment {
+  id: string;
+  content: string;
+  createdAt: string;
 }
 
 // Tip related types
@@ -44,10 +59,10 @@ export interface CreateTipParams {
   title: string;
   content: string;
   tags: string[];
+  authorId?: string;
 }
 
 export interface ApiResponse<T> {
-  [x: string]: string;
   data: T;
   message: string;
   status: number;

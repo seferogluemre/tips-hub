@@ -2,6 +2,7 @@
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 import { useLogout } from "@/hooks/use-user";
 import { cn } from "@/lib/utils";
 import { Home, ListChecks, LogOut, Plus, User } from "lucide-react";
@@ -16,6 +17,9 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const logoutMutation = useLogout();
+
+  // Giriş yapmamış kullanıcıları login sayfasına yönlendir
+  useAuthRedirect({ redirectUnauthenticatedTo: "/login" });
 
   const navItems = [
     {

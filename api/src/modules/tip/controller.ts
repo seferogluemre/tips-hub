@@ -43,13 +43,23 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
     "/",
     async ({ body, userId, set }) => {
       try {
+        console.log("TIP CREATE REQUEST:", {
+          body,
+          userId,
+          hasAuthorIdInBody: !!body?.authorId,
+          bodyKeys: Object.keys(body || {}),
+        });
+
         const tipWithAuthor = {
           ...body,
-          authorId: userId,
+          authorId: userId || body.authorId, // Try to use userId from middleware first, then fall back to body
         };
 
+        console.log("Creating tip with data:", tipWithAuthor);
+
         const tip = await TipService.create(tipWithAuthor);
-        console.log(tip);
+        console.log("Tip created:", tip);
+
         return {
           ...tip,
           tags: tip.tags.map((t) => t.tag),
@@ -59,6 +69,7 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
           },
         };
       } catch (error: any) {
+        console.error("Tip creation error:", error.message);
         set.status = 422;
         return {
           errors: [

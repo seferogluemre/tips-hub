@@ -11,10 +11,8 @@ export const SESSION_EXPIRY_SECONDS = SESSION_EXPIRY / 1000; // saniye
  */
 export const authMiddleware = (app: Elysia) =>
   app.use(cookie()).derive({ as: "scoped" }, async (context) => {
-    // Session cookie'sini kontrol et
     let sessionToken = context.cookie.session;
 
-    // Eğer cookie'de session yoksa, Authorization header'ından kontrol et
     if (!sessionToken && context.headers.authorization) {
       const authHeader = context.headers.authorization;
       if (authHeader.startsWith("Bearer ")) {

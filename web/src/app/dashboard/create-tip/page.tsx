@@ -19,12 +19,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 import { CreateTipFormValues, createTipSchema } from "@/schemas/tip.schema";
-import { tipService } from "@/services/tip.service";
 import { useTipFilterStore } from "@/store/tip-filter.store";
-import { CreateTipParams } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -34,6 +33,9 @@ export default function CreateTipPage() {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Giriş yapmamış kullanıcıları login sayfasına yönlendir
+  useAuthRedirect({ redirectUnauthenticatedTo: "/login" });
 
   const { resetFilters } = useTipFilterStore();
 
@@ -59,10 +61,106 @@ export default function CreateTipPage() {
     return "İpucu oluşturulurken bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
   };
 
-  // Create tip mutation with TanStack React Query
-  const createTipMutation = useMutation({
-    mutationFn: (data: CreateTipParams) => tipService.createTip(data),
-    onSuccess: (response) => {
+  // Form submission handler
+  const onSubmit = async (data: CreateTipFormValues) => {
+    setIsSubmitting(true);
+    setFormError(null);
+
+    // Get userId from localStorage
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("auth_token");
+
+    if (!userId) {
+      setFormError(
+        "Oturum bilgileriniz bulunamadı. Lütfen tekrar giriş yapın."
+      );
+      setIsSubmitting(false);
+
+      toast({
+        title: "Hata",
+        description:
+          "Kullanıcı bilgileriniz bulunamadı. Lütfen tekrar giriş yapın.",
+        variant: "destructive",
+      });
+
+      return;
+    }
+
+    // Convert comma-separated tags to array
+    const tagsArray = data.tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag !== "");
+
+    try {
+      // Doğrudan fetch kullanarak isteği gönderelim
+      const payload = {
+        title: data.title,
+        content: data.content,
+        tags: tagsArray,
+        authorId: userId,
+      };
+
+      console.log("Sending payload:", payload);
+      console.log("Token:", token ? "Mevcut" : "Yok");
+
+      // Önce API'den kullanıcı ID'sini alalım
+      let userIdFromApi;
+      try {
+        const userResponse = await fetch("http://localhost:3000/api/auth/me", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const userData = await userResponse.json();
+        console.log("User data from API:", userData);
+
+        if (userData && userData.id) {
+          userIdFromApi = userData.id;
+          console.log("Using user ID from API:", userIdFromApi);
+        }
+      } catch (userError) {
+        console.error("Could not get user data:", userError);
+      }
+
+      // API'den alınan userId ile payload'ı güncelleyelim
+      if (userIdFromApi) {
+        payload.authorId = userIdFromApi;
+      }
+
+      const response = await fetch("http://localhost:3000/api/tips", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
+
+      // Ham yanıtı inceleyelim
+      const responseText = await response.text();
+      console.log("Raw API Response:", responseText);
+
+      let result;
+      try {
+        // Text'i JSON'a çevirelim
+        result = JSON.parse(responseText);
+        console.log("Parsed API Response:", result);
+      } catch (parseError) {
+        console.error("Error parsing JSON response:", parseError);
+        result = {
+          message: "API yanıtı işlenemedi",
+          errors: [{ message: responseText }],
+        };
+      }
+
+      if (!response.ok) {
+        throw { response: { data: result } };
+      }
+
       setIsSubmitting(false);
       setFormError(null);
 
@@ -75,9 +173,18 @@ export default function CreateTipPage() {
       queryClient.invalidateQueries({ queryKey: ["tips"] });
       resetFilters();
       router.push("/dashboard");
-    },
-    onError: (error: any) => {
+    } catch (error: any) {
       setIsSubmitting(false);
+
+      // Daha detaylı hata logu
+      console.error("Tip creation error details:", {
+        error,
+        errorType: typeof error,
+        hasResponse: !!error.response,
+        responseData: error.response?.data,
+        originalMessage: error.message,
+        stack: error.stack,
+      });
 
       // API'den gelen hata mesajlarını işle
       if (error.response?.data?.errors) {
@@ -126,25 +233,7 @@ export default function CreateTipPage() {
       }
 
       console.error("Tip creation failed:", error);
-    },
-  });
-
-  // Form submission handler
-  const onSubmit = (data: CreateTipFormValues) => {
-    setIsSubmitting(true);
-    setFormError(null);
-
-    // Convert comma-separated tags to array
-    const tagsArray = data.tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag !== "");
-
-    createTipMutation.mutate({
-      title: data.title,
-      content: data.content,
-      tags: tagsArray,
-    });
+    }
   };
 
   return (

@@ -16,6 +16,17 @@ export const tipService = {
 
   // Create a new tip
   createTip: async (tipData: CreateTipParams): Promise<ApiResponse<Tip>> => {
+    // Make sure authorId exists in the request
+    if (!tipData.authorId) {
+      const userId = localStorage.getItem("userId");
+      if (userId) {
+        tipData.authorId = userId;
+      }
+    }
+
+    // Log the request payload for debugging
+    console.log("Creating tip with data:", tipData);
+
     const response = await api.post("/tips", tipData);
     return response.data;
   },

@@ -3,6 +3,7 @@ import { TipCreatePayload, TipUpdatePayload } from "./types";
 
 export const TipService = {
   async create(data: TipCreatePayload) {
+    console.log("create tip data", data);
     if (!data.authorId) {
       throw new Error("Yazar ID'si (authorId) gereklidir. Lütfen giriş yapın.");
     }

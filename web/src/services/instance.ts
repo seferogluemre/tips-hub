@@ -5,12 +5,13 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Send cookies with cross-origin requests
 });
 
 // Request Interceptor: Her istekte token'ı ekle
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("auth_token");
 
     console.log("Auth token:", token ? "Mevcut" : "Yok");
 
@@ -52,16 +53,37 @@ api.interceptors.response.use(
       headers: error.config?.headers,
     });
 
-    // 401 Unauthorized hatası gelirse
-    if (error.response && error.response.status === 401) {
-      console.warn("401 Unauthorized error - Token geçersiz veya eksik");
+    // Hata içindeki mesajları kontrol et
+    const errorMessages = error.response?.data?.errors || [];
+    const isAuthError = errorMessages.some(
+      (err: { message?: string; field?: string }) =>
+        typeof err.message === "string" &&
+        (err.message.includes("yetkilendirme") ||
+          err.message.includes("oturum") ||
+          err.message.includes("giriş yap") ||
+          err.message.toLowerCase().includes("auth") ||
+          err.message.includes("Yazar ID"))
+    );
 
-      // Token'ı temizle
+    // 401 Unauthorized veya yetkilendirme hatası içeren 422 hatası gelirse
+    if (
+      error.response &&
+      (error.response.status === 401 ||
+        (error.response.status === 422 && isAuthError))
+    ) {
+      console.warn("Yetkilendirme hatası - Oturum geçersiz veya eksik");
+
+      // Token'ı ve userId'yi temizle
       localStorage.removeItem("auth_token");
+      localStorage.removeItem("userId");
 
-      // Eğer tarayıcı ortamındaysak, login sayfasına yönlendir
+      // Eğer tarayıcı ortamındaysak ve şu an login sayfasında değilsek, login sayfasına yönlendir
       if (typeof window !== "undefined") {
-        window.location.href = "/login";
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes("/login")) {
+          console.log("Yönlendiriliyor: /login");
+          window.location.href = "/login";
+        }
       }
     }
 

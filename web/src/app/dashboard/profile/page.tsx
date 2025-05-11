@@ -18,28 +18,51 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTips } from "@/hooks/use-tips";
-import { useLogout, useUpdateProfile, useUserProfile } from "@/hooks/use-user";
+import {
+  useLogout,
+  useUpdateProfile,
+  useUserById,
+  useUserProfile,
+} from "@/hooks/use-user";
 import { profileFormSchema, ProfileFormValues } from "@/schemas/user.schema";
+import { UserTip } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const userId = searchParams.get("id");
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Fetch user profile
-  const { data: user, isLoading: isUserLoading } = useUserProfile();
+  // Always fetch current user profile as a fallback
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useUserProfile(
+    userId || ""
+  );
+
+  // Fetch user by ID only if valid userId is provided
+  const { data: userById, isLoading: isUserByIdLoading } = useUserById(
+    userId || "",
+    {
+      enabled: !!userId && userId.length > 0,
+    }
+  );
+
+  // Determine which user data to use
+  const userData = userId && userById ? userById : currentUser;
+  const isLoading = userId ? isUserByIdLoading : isCurrentUserLoading;
+
+  console.log("Current user data:", currentUser);
+  console.log("User by ID data:", userById);
+  console.log("Final user data to display:", userData);
 
   // Logout mutation
   const logoutMutation = useLogout();
 
   // Update profile mutation
   const updateProfileMutation = useUpdateProfile();
-
-  const { data: userTips, isLoading: isTipsLoading } = useTips();
 
   // Form setup
   const form = useForm<ProfileFormValues>({
@@ -56,16 +79,17 @@ export default function ProfilePage() {
 
   // Set form values when user data is loaded
   useEffect(() => {
-    if (user) {
+    if (userData) {
+      console.log("Setting form values with:", userData);
       form.reset({
-        name: user.name,
-        email: user.email,
+        name: userData.name || "",
+        email: userData.email || "",
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
     }
-  }, [user, form]);
+  }, [userData, form]);
 
   // Handle profile update
   const onSubmit = (data: ProfileFormValues) => {
@@ -112,10 +136,23 @@ export default function ProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isUserLoading ? (
+                {isLoading ? (
                   <div className="space-y-4">
                     <div className="h-10 bg-muted rounded animate-pulse" />
                     <div className="h-10 bg-muted rounded animate-pulse" />
+                  </div>
+                ) : !userData ? (
+                  <div className="p-4 text-center">
+                    <p className="text-red-500">
+                      Kullanıcı bilgileri yüklenemedi.
+                    </p>
+                    <Button
+                      className="mt-4"
+                      onClick={() => router.push("/dashboard")}
+                      variant="outline"
+                    >
+                      Panele Dön
+                    </Button>
                   </div>
                 ) : (
                   <Form {...form}>
@@ -247,56 +284,84 @@ export default function ProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isTipsLoading ? (
+              {isLoading ? (
                 <div className="space-y-4">
                   <div className="h-14 bg-muted rounded animate-pulse" />
                   <div className="h-14 bg-muted rounded animate-pulse" />
                   <div className="h-14 bg-muted rounded animate-pulse" />
                 </div>
-              ) : (
+              ) : !userData ? (
+                <div className="p-4 text-center">
+                  <p className="text-red-500">
+                    Kullanıcı bilgileri yüklenemedi.
+                  </p>
+                </div>
+              ) : userData.tips && userData.tips.length > 0 ? (
                 <div className="space-y-4">
-                  {userTips && userTips.length > 0 ? (
-                    userTips.map((tip) => (
-                      <div key={tip.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-md">{tip.title}</h3>
-                          <span className="text-xs text-muted-foreground">
-                            {tip.createdAt}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {tip.content}
-                        </p>
-                        <div className="flex gap-2">
-                          {tip.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
+                  {userData.tips.map((tip: UserTip) => (
+                    <div key={tip.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium text-md">{tip.title}</h3>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(tip.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-3">
-                        Henüz bir ipucu paylaşmadınız.
-                      </p>
-                      <Button
-                        onClick={() => router.push("/dashboard/create-tip")}
-                      >
-                        İpucu Oluştur
-                      </Button>
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            router.push(`/dashboard/tips/${tip.id}`)
+                          }
+                        >
+                          Görüntüle
+                        </Button>
+                      </div>
                     </div>
-                  )}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-3">
+                    Henüz bir ipucu paylaşılmamış.
+                  </p>
+                  <Button onClick={() => router.push("/dashboard/create-tip")}>
+                    İpucu Oluştur
+                  </Button>
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Debug information */}
+      {process.env.NODE_ENV !== "production" && (
+        <div className="mt-8 p-4 border border-gray-200 rounded-md">
+          <h3 className="font-medium mb-2">Debug Info</h3>
+          <pre className="text-xs overflow-auto bg-gray-50 p-2 rounded">
+            {JSON.stringify(
+              {
+                userId,
+                userDataSource: userId && userById ? "userById" : "currentUser",
+                userData: userData
+                  ? {
+                      id: userData.id,
+                      name: userData.name,
+                      email: userData.email,
+                      tipsCount: userData.tips?.length || 0,
+                    }
+                  : null,
+                isLoading,
+                isCurrentUserLoading,
+                isUserByIdLoading,
+              },
+              null,
+              2
+            )}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
