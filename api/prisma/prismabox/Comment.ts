@@ -24,6 +24,7 @@ export const CommentRelations = t.Object({
     id: t.String(),
     email: t.String(),
     name: __nullable__(t.String()),
+    password: __nullable__(t.String()),
     createdAt: t.Date(),
   }),
 });

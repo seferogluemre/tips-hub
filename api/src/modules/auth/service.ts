@@ -24,7 +24,6 @@ export const AuthService = {
       },
     });
 
-    // Session bilgisini döndür
     return {
       id: user.id,
       email: user.email,

@@ -8,6 +8,7 @@ export const UserPlain = t.Object({
   id: t.String(),
   email: t.String(),
   name: __nullable__(t.String()),
+  password: __nullable__(t.String()),
   createdAt: t.Date(),
 });
 
@@ -37,11 +38,13 @@ export const UserRelations = t.Object({
 export const UserPlainInputCreate = t.Object({
   email: t.String(),
   name: t.Optional(__nullable__(t.String())),
+  password: t.Optional(__nullable__(t.String())),
 });
 
 export const UserPlainInputUpdate = t.Object({
   email: t.Optional(t.String()),
   name: t.Optional(__nullable__(t.String())),
+  password: t.Optional(__nullable__(t.String())),
 });
 
 export const UserRelationsInputCreate = t.Object({
@@ -115,6 +118,7 @@ export const UserWhere = t.Partial(
           id: t.String(),
           email: t.String(),
           name: t.String(),
+          password: t.String(),
           createdAt: t.Date(),
         },
         { additionalProperties: true },
@@ -151,6 +155,7 @@ export const UserWhereUnique = t.Recursive(
             id: t.String(),
             email: t.String(),
             name: t.String(),
+            password: t.String(),
             createdAt: t.Date(),
           }),
         ),
@@ -165,6 +170,7 @@ export const UserSelect = t.Partial(
     id: t.Boolean(),
     email: t.Boolean(),
     name: t.Boolean(),
+    password: t.Boolean(),
     tips: t.Boolean(),
     comments: t.Boolean(),
     createdAt: t.Boolean(),
@@ -185,6 +191,9 @@ export const UserOrderBy = t.Partial(
       additionalProperties: true,
     }),
     name: t.Union([t.Literal("asc"), t.Literal("desc")], {
+      additionalProperties: true,
+    }),
+    password: t.Union([t.Literal("asc"), t.Literal("desc")], {
       additionalProperties: true,
     }),
     createdAt: t.Union([t.Literal("asc"), t.Literal("desc")], {
