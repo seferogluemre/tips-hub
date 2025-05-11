@@ -1,14 +1,16 @@
-import { Static } from 'elysia';
-import { tipCreateDto, tipResponseDto, tipShowDto, tipUpdateDto } from './dtos';
+import { Static } from "elysia";
+import { tipCreateDto, tipResponseDto, tipShowDto, tipUpdateDto } from "./dtos";
 
 // CREATE
-export type TipCreatePayload = Static<(typeof tipCreateDto)['body']>;
+export type TipCreatePayload = Static<(typeof tipCreateDto)["body"]> & {
+  authorId?: string;
+};
 
 // UPDATE
-export type TipUpdatePayload = Static<(typeof tipUpdateDto)['body']>;
+export type TipUpdatePayload = Static<(typeof tipUpdateDto)["body"]>;
 
 // GET /:id
-export type TipShowParams = Static<(typeof tipShowDto)['params']>;
+export type TipShowParams = Static<(typeof tipShowDto)["params"]>;
 
 // RESPONSE
 export type TipResponse = Static<typeof tipResponseDto>;

@@ -28,7 +28,7 @@ export function LoginForm() {
 
   const mutation = useMutation({
     mutationFn: (credentials: { email: string; password: string }) =>
-      authService.login(credentials.email, credentials.password),
+      authService.login(credentials),
     onSuccess: (data) => {
       localStorage.setItem("token", data.token);
       router.push("/dashboard");

@@ -3,11 +3,19 @@ import { TipCreatePayload, TipUpdatePayload } from "./types";
 
 export const TipService = {
   async create(data: TipCreatePayload) {
+    if (!data.authorId) {
+      throw new Error("Yazar ID'si (authorId) gereklidir. Lütfen giriş yapın.");
+    }
+
     return await prisma.tip.create({
       data: {
         title: data.title,
         content: data.content,
-        authorId: data.authorId,
+        author: {
+          connect: {
+            id: data.authorId,
+          },
+        },
       },
       include: {
         tags: {

@@ -47,6 +47,7 @@ export interface CreateTipParams {
 }
 
 export interface ApiResponse<T> {
+  [x: string]: string;
   data: T;
   message: string;
   status: number;

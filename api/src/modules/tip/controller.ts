@@ -43,14 +43,13 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
     "/",
     async ({ body, userId, set }) => {
       try {
-        // Kullanıcı ID'sini body'ye ekliyoruz
         const tipWithAuthor = {
           ...body,
           authorId: userId,
         };
 
         const tip = await TipService.create(tipWithAuthor);
-
+        console.log(tip);
         return {
           ...tip,
           tags: tip.tags.map((t) => t.tag),

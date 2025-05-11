@@ -46,6 +46,20 @@ export default function CreateTipPage() {
     },
   });
 
+  // Prisma hatalarında anlamlı mesajlar oluşturma
+  const formatPrismaError = (errorText: string): string => {
+    if (errorText.includes("Argument `author` is missing")) {
+      return "Oturum bilgileriniz bulunamadı. Lütfen tekrar giriş yapın.";
+    }
+
+    if (errorText.includes("authorId: undefined")) {
+      return "Kullanıcı kimliği bulunamadı. Lütfen tekrar giriş yapın veya oturumunuzu yenileyin.";
+    }
+
+    return "İpucu oluşturulurken bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+  };
+
+  // Create tip mutation with TanStack React Query
   const createTipMutation = useMutation({
     mutationFn: (data: CreateTipParams) => tipService.createTip(data),
     onSuccess: (response) => {
@@ -53,7 +67,7 @@ export default function CreateTipPage() {
       setFormError(null);
 
       toast({
-        title: "İpucu oluşturuldu",
+        title: "Başarılı!",
         description: "İpucunuz başarıyla oluşturuldu.",
         variant: "success",
       });
@@ -65,27 +79,48 @@ export default function CreateTipPage() {
     onError: (error: any) => {
       setIsSubmitting(false);
 
+      // API'den gelen hata mesajlarını işle
       if (error.response?.data?.errors) {
-        const errorMessages = error.response.data.errors
-          .map((err: any) => err.message)
-          .join("\n");
+        const errorObj = error.response.data.errors;
+        let errorMessage = "";
 
-        setFormError(errorMessages || "İpucu oluşturulurken bir hata oluştu.");
+        // Error dizisi varsa
+        if (Array.isArray(errorObj)) {
+          const messages = errorObj.map((err: any) => {
+            // Prisma hatası içeren mesaj varsa formatlayalım
+            if (
+              err.message &&
+              typeof err.message === "string" &&
+              err.message.includes("prisma")
+            ) {
+              return formatPrismaError(err.message);
+            }
+            return err.message || "Bilinmeyen hata";
+          });
 
-        toast({
-          title: "Hata",
-          description: "İpucu oluşturulurken bir hata oluştu.",
-          variant: "destructive",
-        });
-      } else {
-        setFormError(
-          "Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin."
-        );
+          errorMessage = messages.join("\n");
+        }
+        // Ana hata mesajı varsa
+        else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        }
+
+        setFormError(errorMessage || "İpucu oluşturulurken bir hata oluştu.");
 
         toast({
           title: "Hata",
           description:
-            "Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+            "İpucu oluşturulamadı. Lütfen detaylar için formu kontrol edin.",
+          variant: "destructive",
+        });
+      } else {
+        const errorMessage =
+          "Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+        setFormError(errorMessage);
+
+        toast({
+          title: "Bağlantı Hatası",
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -94,9 +129,12 @@ export default function CreateTipPage() {
     },
   });
 
+  // Form submission handler
   const onSubmit = (data: CreateTipFormValues) => {
     setIsSubmitting(true);
+    setFormError(null);
 
+    // Convert comma-separated tags to array
     const tagsArray = data.tags
       .split(",")
       .map((tag) => tag.trim())
@@ -123,8 +161,10 @@ export default function CreateTipPage() {
         </CardHeader>
         <CardContent>
           {formError && (
-            <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">
-              <p className="font-medium">Bir hata oluştu:</p>
+            <div className="bg-destructive/15 text-destructive p-4 rounded-md mb-6 border border-destructive/30">
+              <p className="font-medium mb-1">
+                İşlem sırasında bir hata oluştu:
+              </p>
               <p className="text-sm whitespace-pre-line">{formError}</p>
             </div>
           )}
