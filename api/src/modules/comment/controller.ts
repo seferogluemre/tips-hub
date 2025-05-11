@@ -1,3 +1,5 @@
+import { cookie } from "@elysiajs/cookie";
+import { jwt } from "@elysiajs/jwt";
 import { Elysia } from "elysia";
 import {
   commentCreateDto,
@@ -8,7 +10,36 @@ import {
 } from "./dtos";
 import { CommentService } from "./service";
 
+// JWT secret - controller içinde auth işlemleri için
+const JWT_SECRET =
+  process.env.JWT_SECRET || "super-secret-jwt-key-change-in-production";
+
 export const CommentController = new Elysia({ prefix: "/api/comments" })
+  .use(cookie())
+  .use(
+    jwt({
+      name: "jwt",
+      secret: JWT_SECRET,
+    })
+  )
+  .derive(async ({ cookie, jwt }) => {
+    // Session cookie'sini kontrol et
+    const sessionCookie = cookie.session as string | undefined;
+
+    if (!sessionCookie) {
+      return { userId: null };
+    }
+
+    try {
+      const payload = await jwt.verify(sessionCookie);
+      if (!payload || !payload.userId) {
+        return { userId: null };
+      }
+      return { userId: payload.userId as string };
+    } catch (error) {
+      return { userId: null };
+    }
+  })
   .get(
     "/",
     async ({ query }) => {
@@ -41,13 +72,26 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
   )
   .post(
     "/",
-    async ({ body }) => {
+    async ({ body, userId, set }) => {
+      // Kullanıcı giriş yapmamış
+      if (!userId) {
+        set.status = 401;
+        return {
+          message: "Bu işlem için giriş yapmalısınız",
+        };
+      }
+
       try {
-        const comment = await CommentService.create(body);
+        // Mevcut kullanıcı ID'sini authorId olarak kullan
+        const comment = await CommentService.create({
+          ...body,
+          authorId: userId,
+        });
         return comment;
       } catch (error: any) {
         // Specific error handling
         if (error.message === "Tip not found") {
+          set.status = 422;
           return {
             errors: [{ message: error.message, field: "tipId" }],
             message: error.message,
@@ -55,6 +99,7 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
         }
 
         if (error.message === "User not found") {
+          set.status = 422;
           return {
             errors: [{ message: error.message, field: "authorId" }],
             message: error.message,
@@ -62,6 +107,7 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
         }
 
         // Generic error handling
+        set.status = 422;
         return {
           errors: [{ message: "Failed to create comment", field: "body" }],
           message: "Failed to create comment",
@@ -69,7 +115,12 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
       }
     },
     {
-      ...commentCreateDto,
+      body: {
+        content: commentCreateDto.body.properties.content,
+        tipId: commentCreateDto.body.properties.tipId,
+        // authorId artık gerekli değil, otomatik ekleniyor
+      },
+      response: commentCreateDto.response,
       detail: {
         ...commentCreateDto.detail,
         tags: ["Comments"],
@@ -95,17 +146,36 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
   )
   .put(
     "/:uuid",
-    async ({ params, body }) => {
+    async ({ params, body, userId, set }) => {
+      // Kullanıcı giriş yapmamış
+      if (!userId) {
+        set.status = 401;
+        return {
+          message: "Bu işlem için giriş yapmalısınız",
+        };
+      }
+
       try {
-        const comment = await CommentService.update(params.uuid, body);
-        return comment;
-      } catch (error: any) {
-        if (error.message === "Comment not found") {
-          return {
-            message: "Comment not found",
-          };
+        // Önce yorumu bul
+        const comment = await CommentService.getById(params.uuid);
+
+        // Yorum bulunamadı
+        if (!comment) {
+          set.status = 404;
+          return { message: "Comment not found" };
         }
 
+        // Yalnızca kendi yorumunu güncelleyebilir
+        if (comment.authorId !== userId) {
+          set.status = 403;
+          return { message: "Bu yorumu güncelleme yetkiniz yok" };
+        }
+
+        // Yorumu güncelle
+        const updatedComment = await CommentService.update(params.uuid, body);
+        return updatedComment;
+      } catch (error: any) {
+        set.status = 500;
         return {
           message: "Failed to update comment",
           errors: [{ message: "Failed to update comment", field: "body" }],
@@ -122,12 +192,37 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
   )
   .delete(
     "/:uuid",
-    async ({ params }) => {
+    async ({ params, userId, set }) => {
+      // Kullanıcı giriş yapmamış
+      if (!userId) {
+        set.status = 401;
+        return {
+          message: "Bu işlem için giriş yapmalısınız",
+        };
+      }
+
       try {
+        // Önce yorumu bul
+        const comment = await CommentService.getById(params.uuid);
+
+        // Yorum bulunamadı
+        if (!comment) {
+          set.status = 404;
+          return { message: "Comment not found" };
+        }
+
+        // Yalnızca kendi yorumunu silebilir
+        if (comment.authorId !== userId) {
+          set.status = 403;
+          return { message: "Bu yorumu silme yetkiniz yok" };
+        }
+
+        // Yorumu sil
         await CommentService.delete(params.uuid);
         return { message: "Comment deleted successfully" };
       } catch (error) {
-        return { message: "Comment not found" };
+        set.status = 500;
+        return { message: "Failed to delete comment" };
       }
     },
     {

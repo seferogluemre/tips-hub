@@ -20,6 +20,7 @@ model User {
   id        String    @id @default(cuid())
   email     String    @unique
   name      String?
+  password  String?
   tips      Tip[] // Kullanıcının yazdığı tipler
   comments  Comment[] // Kullanıcının yaptığı yorumlar
   createdAt DateTime  @default(now())
