@@ -45,7 +45,23 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
       try {
         const comment = await CommentService.create(body);
         return comment;
-      } catch (error) {
+      } catch (error: any) {
+        // Specific error handling
+        if (error.message === "Tip not found") {
+          return {
+            errors: [{ message: error.message, field: "tipId" }],
+            message: error.message,
+          };
+        }
+
+        if (error.message === "User not found") {
+          return {
+            errors: [{ message: error.message, field: "authorId" }],
+            message: error.message,
+          };
+        }
+
+        // Generic error handling
         return {
           errors: [{ message: "Failed to create comment", field: "body" }],
           message: "Failed to create comment",
@@ -83,8 +99,17 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
       try {
         const comment = await CommentService.update(params.uuid, body);
         return comment;
-      } catch (error) {
-        return { message: "Comment not found" };
+      } catch (error: any) {
+        if (error.message === "Comment not found") {
+          return {
+            message: "Comment not found",
+          };
+        }
+
+        return {
+          message: "Failed to update comment",
+          errors: [{ message: "Failed to update comment", field: "body" }],
+        };
       }
     },
     {

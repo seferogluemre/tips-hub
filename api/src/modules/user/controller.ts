@@ -42,7 +42,31 @@ export const UserController = new Elysia({ prefix: "/api/users" })
       try {
         const user = await UserService.create(body);
         return user;
-      } catch (error) {
+      } catch (error: any) {
+        // Validasyon ve alan hataları için spesifik mesajlar
+        if (error.message === "Name is required") {
+          return {
+            errors: [{ message: error.message, field: "name" }],
+            message: "Validation failed",
+          };
+        }
+
+        if (error.message === "Email is required") {
+          return {
+            errors: [{ message: error.message, field: "email" }],
+            message: "Validation failed",
+          };
+        }
+
+        // Email unique kontrolü
+        if (error.message === "Email address is already in use") {
+          return {
+            errors: [{ message: error.message, field: "email" }],
+            message: error.message,
+          };
+        }
+
+        // Generic error handling
         return {
           errors: [{ message: "Failed to create user", field: "body" }],
           message: "Failed to create user",
@@ -79,9 +103,23 @@ export const UserController = new Elysia({ prefix: "/api/users" })
     async ({ params, body }) => {
       try {
         const user = await UserService.update(params.uuid, body);
+        if (!user) {
+          return { message: "User not found" };
+        }
         return user;
-      } catch (error) {
-        return { message: "User not found" };
+      } catch (error: any) {
+        // Email unique kontrolü
+        if (error.message === "Email address is already in use") {
+          return {
+            errors: [{ message: error.message, field: "email" }],
+            message: error.message,
+          };
+        }
+
+        // Genel hata mesajı
+        return {
+          message: "User not found or could not be updated",
+        };
       }
     },
     {

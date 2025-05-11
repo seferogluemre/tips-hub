@@ -3,6 +3,22 @@ import { UserCreatePayload, UserUpdatePayload } from "./types";
 
 export const UserService = {
   async create(data: UserCreatePayload) {
+    if (!data.name || data.name.trim() === "") {
+      throw new Error("Name is required");
+    }
+
+    if (!data.email || data.email.trim() === "") {
+      throw new Error("Email is required");
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      throw new Error("Email address is already in use");
+    }
+
     const user = await prisma.user.create({
       data: {
         email: data.email,
@@ -16,14 +32,14 @@ export const UserService = {
   },
 
   async getAll(search?: string) {
-    const where = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {};
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
 
     const users = await prisma.user.findMany({
       where,
@@ -72,12 +88,42 @@ export const UserService = {
   },
 
   async update(id: string, data: UserUpdatePayload) {
+    const currentUser = await prisma.user.findUnique({
+      where: { id },
+      select: { email: true, name: true },
+    });
+
+    if (!currentUser) {
+      throw new Error("User not found");
+    }
+
+    if (data.email && data.email !== currentUser.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: data.email },
+      });
+
+      if (existingUser) {
+        throw new Error("Email address is already in use");
+      }
+    }
+
+    const updateData: { email?: string; name?: string | null } = {};
+
+    if (data.email !== undefined) {
+      updateData.email = data.email;
+    }
+
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return this.getById(id);
+    }
+
     const user = await prisma.user.update({
       where: { id },
-      data: {
-        ...(data.email ? { email: data.email } : {}),
-        ...(data.name !== undefined ? { name: data.name } : {}),
-      },
+      data: updateData,
     });
 
     return {

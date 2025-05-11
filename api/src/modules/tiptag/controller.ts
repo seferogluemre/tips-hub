@@ -45,7 +45,23 @@ export const TipTagController = new Elysia({ prefix: "/api/tiptags" })
       try {
         const tipTag = await TipTagService.create(body);
         return tipTag;
-      } catch (error) {
+      } catch (error: any) {
+        // Specific error handling
+        if (error.message === "Tip not found") {
+          return {
+            errors: [{ message: error.message, field: "tipId" }],
+            message: error.message,
+          };
+        }
+
+        if (error.message === "Tag not found") {
+          return {
+            errors: [{ message: error.message, field: "tagId" }],
+            message: error.message,
+          };
+        }
+
+        // Generic error handling
         return {
           errors: [
             { message: "Failed to create tip-tag relation", field: "body" },
@@ -85,8 +101,10 @@ export const TipTagController = new Elysia({ prefix: "/api/tiptags" })
       try {
         await TipTagService.delete(params.uuid);
         return { message: "Tip-tag relation deleted successfully" };
-      } catch (error) {
-        return { message: "Tip-tag relation not found" };
+      } catch (error: any) {
+        return {
+          message: error.message || "Tip-tag relation not found",
+        };
       }
     },
     {
@@ -113,8 +131,10 @@ export const TipTagController = new Elysia({ prefix: "/api/tiptags" })
       try {
         await TipTagService.deleteByTipAndTag(query.tipId, query.tagId);
         return { message: "Tip-tag relation deleted successfully" };
-      } catch (error) {
-        return { message: "Tip-tag relation not found" };
+      } catch (error: any) {
+        return {
+          message: error.message || "Tip-tag relation not found",
+        };
       }
     },
     {

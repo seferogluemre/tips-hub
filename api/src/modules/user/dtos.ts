@@ -7,7 +7,7 @@ import {
 } from "../../utils/pagination-helper";
 import { uuidValidation } from "../../utils/uuid-validation";
 
-// User model
+// User model - name alanı nullable olarak tanımlandı (veritabanı modeline uygun olarak)
 export const UserPlain = t.Object({
   id: t.String(),
   email: t.String(),
@@ -18,16 +18,34 @@ export const UserPlain = t.Object({
 // User response DTO
 export const userResponseDto = UserPlain;
 
-// User create DTO
+// User create DTO - email formatı doğrulama eklendi, name zorunlu
 export const UserPlainInputCreate = t.Object({
-  email: t.String({ format: "email" }),
-  name: t.Optional(t.String()),
+  email: t.String({
+    format: "email",
+    error: "Geçerli bir e-posta adresi giriniz",
+    default: "",
+  }),
+  name: t.String({
+    minLength: 2,
+    error: "İsim en az 2 karakter olmalıdır",
+    default: "",
+  }),
 });
 
-// User update DTO
+// User update DTO - güncelleme için her alan opsiyonel
 export const UserPlainInputUpdate = t.Object({
-  email: t.Optional(t.String({ format: "email" })),
-  name: t.Optional(t.String()),
+  email: t.Optional(
+    t.String({
+      format: "email",
+      error: "Geçerli bir e-posta adresi giriniz",
+    })
+  ),
+  name: t.Optional(
+    t.String({
+      minLength: 2,
+      error: "İsim en az 2 karakter olmalıdır",
+    })
+  ),
 });
 
 export const userIndexDto = {

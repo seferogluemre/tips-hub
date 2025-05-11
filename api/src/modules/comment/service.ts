@@ -3,6 +3,22 @@ import { CommentCreatePayload, CommentUpdatePayload } from "./types";
 
 export const CommentService = {
   async create(data: CommentCreatePayload) {
+    const tip = await prisma.tip.findUnique({
+      where: { id: data.tipId },
+    });
+
+    if (!tip) {
+      throw new Error("Tip not found");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: data.authorId },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     const comment = await prisma.comment.create({
       data: {
         content: data.content,
@@ -52,16 +68,32 @@ export const CommentService = {
   },
 
   async update(id: string, data: CommentUpdatePayload) {
-    const comment = await prisma.comment.update({
+    const comment = await prisma.comment.findUnique({
       where: { id },
-      data: {
-        ...(data.content !== undefined ? { content: data.content } : {}),
-      },
+    });
+
+    if (!comment) {
+      throw new Error("Comment not found");
+    }
+
+    const updateData: { content?: string } = {};
+
+    if (data.content !== undefined) {
+      updateData.content = data.content;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return this.getById(id);
+    }
+
+    const updatedComment = await prisma.comment.update({
+      where: { id },
+      data: updateData,
     });
 
     return {
-      ...comment,
-      createdAt: comment.createdAt || new Date(),
+      ...updatedComment,
+      createdAt: updatedComment.createdAt || new Date(),
     };
   },
 
