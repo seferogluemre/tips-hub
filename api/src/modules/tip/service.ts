@@ -64,6 +64,42 @@ export const TipService = {
     }));
   },
 
+  async getByAuthor(authorId: string) {
+    const tips = await prisma.tip.findMany({
+      where: { authorId },
+      include: {
+        tags: {
+          include: {
+            tag: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        author: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return tips.map((tip) => ({
+      ...tip,
+      tags: tip.tags.map((t) => t.tag),
+      author: {
+        id: tip.author.id,
+        name: tip.author.name || "",
+      },
+    }));
+  },
+
   async getById(id: string) {
     return prisma.tip.findUnique({
       where: { id },

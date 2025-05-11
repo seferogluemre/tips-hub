@@ -16,32 +16,33 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authService } from "@/services/auth.service";
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
+  const mutation = useMutation({
+    mutationFn: (credentials: { email: string; password: string }) =>
+      authService.login(credentials.email, credentials.password),
+    onSuccess: (data) => {
+      localStorage.setItem("token", data.token);
+      router.push("/dashboard");
+    },
+    onError: (error) => {
+      alert(
+        "Giriş başarısız: " + ((error as Error).message || "Bir hata oluştu")
+      );
+    },
+  });
+
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // Burada backend API'nize bağlanacak kod gelecek
-      // Örnek: const response = await fetch('https://api.tiphub.com/login', {...})
-
-      // Başarılı giriş sonrası ana sayfaya yönlendirme
-      setTimeout(() => {
-        router.push("/dashboard");
-        setIsLoading(false);
-      }, 2000);
-    } catch (error) {
-      setIsLoading(false);
-      console.error("Login error:", error);
-    }
+    mutation.mutate({ email, password });
   }
 
   return (
@@ -85,8 +86,12 @@ export function LoginForm() {
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && (
+          <Button
+            type="submit"
+            className="w-full mt-3"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}
             Giriş Yap

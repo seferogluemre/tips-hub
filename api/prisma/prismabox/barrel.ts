@@ -4,5 +4,6 @@ export * from "./Tip";
 export * from "./Tag";
 export * from "./TipTag";
 export * from "./Comment";
+export * from "./Bookmark";
 export * from "./__nullable__";
 export * from "./__transformDate__";

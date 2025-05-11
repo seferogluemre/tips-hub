@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { requireAuth } from "../../middlewares/auth-middleware";
 import {
   tipCreateDto,
   tipDestroyDto,
@@ -37,29 +38,69 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
       },
     }
   )
+  .use(requireAuth)
   .post(
     "/",
-    async ({ body }) => {
-      const tip = await TipService.create(body);
-      if (!tip) {
+    async ({ body, userId, set }) => {
+      try {
+        // Kullanıcı ID'sini body'ye ekliyoruz
+        const tipWithAuthor = {
+          ...body,
+          authorId: userId,
+        };
+
+        const tip = await TipService.create(tipWithAuthor);
+
         return {
-          errors: [{ message: "Failed to create tip", field: "body" }],
-          message: "Failed to create tip",
+          ...tip,
+          tags: tip.tags.map((t) => t.tag),
+          author: {
+            id: tip.author.id,
+            name: tip.author.name || "",
+          },
+        };
+      } catch (error: any) {
+        set.status = 422;
+        return {
+          errors: [
+            { message: error.message || "İpucu oluşturulamadı", field: "body" },
+          ],
+          message: "İpucu oluşturma hatası",
         };
       }
-      return {
-        ...tip,
-        tags: tip.tags.map((t) => t.tag),
-        author: {
-          id: tip.author.id,
-          name: tip.author.name || "",
-        },
-      };
     },
     {
       ...tipCreateDto,
       detail: {
         ...tipCreateDto.detail,
+        tags: ["Tips"],
+      },
+    }
+  )
+  .get(
+    "/my-tips",
+    async ({ userId }) => {
+      // Kullanıcının kendi ipuçlarını getir
+      const tips = await TipService.getByAuthor(userId);
+      return {
+        data: tips.map((tip) => ({
+          ...tip,
+          tags: tip.tags.map((t) => t.tag),
+          author: {
+            id: tip.author.id,
+            name: tip.author.name || "",
+          },
+        })),
+        meta: {
+          total: tips.length,
+        },
+      };
+    },
+    {
+      ...tipIndexDto,
+      detail: {
+        summary: "Kullanıcı İpuçları",
+        description: "Giriş yapmış kullanıcının kendi ipuçlarını listeler",
         tags: ["Tips"],
       },
     }
@@ -114,9 +155,30 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
   )
   .delete(
     "/:uuid",
-    async ({ params }) => {
-      await TipService.delete(params.uuid);
-      return { message: "Tip deleted successfully" };
+    async ({ params, userId, set }) => {
+      try {
+        // Önce ipucunu bul
+        const tip = await TipService.getById(params.uuid);
+
+        // İpucu bulunamadı
+        if (!tip) {
+          set.status = 404;
+          return { message: "İpucu bulunamadı" };
+        }
+
+        // Kullanıcı bu ipucunun sahibi değilse
+        if (tip.author.id !== userId) {
+          set.status = 403;
+          return { message: "Bu ipucunu silme yetkiniz yok" };
+        }
+
+        // İpucunu sil
+        await TipService.delete(params.uuid);
+        return { message: "İpucu başarıyla silindi" };
+      } catch (error) {
+        set.status = 500;
+        return { message: "İpucu silinirken bir hata oluştu" };
+      }
     },
     {
       ...tipDestroyDto,

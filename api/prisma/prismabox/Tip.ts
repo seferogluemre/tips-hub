@@ -34,6 +34,15 @@ export const TipRelations = t.Object({
     }),
     { additionalProperties: true },
   ),
+  bookmarks: t.Array(
+    t.Object({
+      id: t.String(),
+      userId: t.String(),
+      tipId: t.String(),
+      createdAt: t.Date(),
+    }),
+    { additionalProperties: true },
+  ),
 });
 
 export const TipPlainInputCreate = t.Object({
@@ -72,6 +81,16 @@ export const TipRelationsInputCreate = t.Object({
       ),
     }),
   ),
+  bookmarks: t.Optional(
+    t.Object({
+      connect: t.Array(
+        t.Object({
+          id: t.String(),
+        }),
+        { additionalProperties: true },
+      ),
+    }),
+  ),
 });
 
 export const TipRelationsInputUpdate = t.Partial(
@@ -98,6 +117,22 @@ export const TipRelationsInputUpdate = t.Partial(
       }),
     ),
     comments: t.Partial(
+      t.Object({
+        connect: t.Array(
+          t.Object({
+            id: t.String(),
+          }),
+          { additionalProperties: true },
+        ),
+        disconnect: t.Array(
+          t.Object({
+            id: t.String(),
+          }),
+          { additionalProperties: true },
+        ),
+      }),
+    ),
+    bookmarks: t.Partial(
       t.Object({
         connect: t.Array(
           t.Object({
@@ -177,6 +212,7 @@ export const TipSelect = t.Partial(
     authorId: t.Boolean(),
     tags: t.Boolean(),
     comments: t.Boolean(),
+    bookmarks: t.Boolean(),
     createdAt: t.Boolean(),
     _count: t.Boolean(),
   }),
@@ -187,6 +223,7 @@ export const TipInclude = t.Partial(
     author: t.Boolean(),
     tags: t.Boolean(),
     comments: t.Boolean(),
+    bookmarks: t.Boolean(),
     _count: t.Boolean(),
   }),
 );

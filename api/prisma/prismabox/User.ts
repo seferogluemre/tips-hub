@@ -45,6 +45,15 @@ export const UserRelations = t.Object({
     }),
     { additionalProperties: true },
   ),
+  bookmarks: t.Array(
+    t.Object({
+      id: t.String(),
+      userId: t.String(),
+      tipId: t.String(),
+      createdAt: t.Date(),
+    }),
+    { additionalProperties: true },
+  ),
 });
 
 export const UserPlainInputCreate = t.Object({
@@ -81,6 +90,16 @@ export const UserRelationsInputCreate = t.Object({
     }),
   ),
   sessions: t.Optional(
+    t.Object({
+      connect: t.Array(
+        t.Object({
+          id: t.String(),
+        }),
+        { additionalProperties: true },
+      ),
+    }),
+  ),
+  bookmarks: t.Optional(
     t.Object({
       connect: t.Array(
         t.Object({
@@ -127,6 +146,22 @@ export const UserRelationsInputUpdate = t.Partial(
       }),
     ),
     sessions: t.Partial(
+      t.Object({
+        connect: t.Array(
+          t.Object({
+            id: t.String(),
+          }),
+          { additionalProperties: true },
+        ),
+        disconnect: t.Array(
+          t.Object({
+            id: t.String(),
+          }),
+          { additionalProperties: true },
+        ),
+      }),
+    ),
+    bookmarks: t.Partial(
       t.Object({
         connect: t.Array(
           t.Object({
@@ -212,6 +247,7 @@ export const UserSelect = t.Partial(
     tips: t.Boolean(),
     comments: t.Boolean(),
     sessions: t.Boolean(),
+    bookmarks: t.Boolean(),
     createdAt: t.Boolean(),
     _count: t.Boolean(),
   }),
@@ -222,6 +258,7 @@ export const UserInclude = t.Partial(
     tips: t.Boolean(),
     comments: t.Boolean(),
     sessions: t.Boolean(),
+    bookmarks: t.Boolean(),
     _count: t.Boolean(),
   }),
 );
