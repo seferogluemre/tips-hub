@@ -77,7 +77,6 @@ export default function ProfilePage() {
     mode: "onChange",
   });
 
-  // Set form values when user data is loaded
   useEffect(() => {
     if (userData) {
       console.log("Setting form values with:", userData);
@@ -91,7 +90,6 @@ export default function ProfilePage() {
     }
   }, [userData, form]);
 
-  // Handle profile update
   const onSubmit = (data: ProfileFormValues) => {
     updateProfileMutation.mutate({
       name: data.name,

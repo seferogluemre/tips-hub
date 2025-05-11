@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useTips } from "@/hooks/use-tips";
 import { useTipFilterStore } from "@/store/tip-filter.store";
 import { MessageSquare, Search, Share2, ThumbsUp, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -180,7 +181,14 @@ export default function TipsPage() {
                         </p>
                       </div>
                     </div>
-                    <CardTitle className="mt-3 text-lg">{tip.title}</CardTitle>
+                    <Link
+                      href={`/dashboard/tips/${tip.id}`}
+                      className="hover:underline"
+                    >
+                      <CardTitle className="mt-3 text-lg">
+                        {tip.title}
+                      </CardTitle>
+                    </Link>
                   </CardHeader>
                   <CardContent>
                     <CardDescription className="line-clamp-3">
@@ -204,9 +212,11 @@ export default function TipsPage() {
                         <ThumbsUp className="h-4 w-4" />
                       </Button>
                       <span className="text-sm">{tip?.likes}</span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MessageSquare className="h-4 w-4" />
-                      </Button>
+                      <Link href={`/dashboard/tips/${tip.id}#comments`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <span className="text-sm">{tip?.comments}</span>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
