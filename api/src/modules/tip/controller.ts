@@ -8,7 +8,7 @@ import {
 } from "./dtos";
 import { TipService } from "./service";
 
-export const tipController = new Elysia({ prefix: "/api/tips" })
+export const TipController = new Elysia({ prefix: "/api/tips" })
   .get(
     "/",
     async ({ query }) => {

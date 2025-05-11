@@ -18,7 +18,7 @@ export const TipTagRelations = t.Object({
     authorId: t.String(),
     createdAt: t.Date(),
   }),
-  tag: t.Object({ id: t.String(), name: t.String() }),
+  tag: t.Object({ id: t.String(), name: t.String(), createdAt: t.Date() }),
 });
 
 export const TipTagPlainInputCreate = t.Object({});

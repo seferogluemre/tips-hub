@@ -3,16 +3,18 @@ import dotenv from "dotenv";
 import { Elysia } from "elysia";
 import { handleElysiaError } from "./config/error-handler";
 import { swaggerConfig } from "./config/swagger";
-import { tipController } from "./modules/tip/controller";
+import { TagController } from "./modules/tag/controller";
+import { TipController } from "./modules/tip/controller";
 
 dotenv.config();
 
 const app = new Elysia()
   .use(cors())
   .use(swaggerConfig)
-  .use(tipController)
+  .use(TipController)
+  .use(TagController)
   .onError(handleElysiaError)
-  .get("/api", () => "Hello World")
+  .get("", () => "Hello World")
   .listen(process.env.PORT || 3000);
 
 console.log(

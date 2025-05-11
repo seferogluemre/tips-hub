@@ -4,7 +4,11 @@ import { __transformDate__ } from "./__transformDate__";
 
 import { __nullable__ } from "./__nullable__";
 
-export const TagPlain = t.Object({ id: t.String(), name: t.String() });
+export const TagPlain = t.Object({
+  id: t.String(),
+  name: t.String(),
+  createdAt: t.Date(),
+});
 
 export const TagRelations = t.Object({
   tips: t.Array(
@@ -61,6 +65,7 @@ export const TagWhere = t.Partial(
           OR: t.Array(Self, { additionalProperties: true }),
           id: t.String(),
           name: t.String(),
+          createdAt: t.Date(),
         },
         { additionalProperties: true },
       ),
@@ -91,7 +96,9 @@ export const TagWhereUnique = t.Recursive(
           }),
           { additionalProperties: true },
         ),
-        t.Partial(t.Object({ id: t.String(), name: t.String() })),
+        t.Partial(
+          t.Object({ id: t.String(), name: t.String(), createdAt: t.Date() }),
+        ),
       ],
       { additionalProperties: true },
     ),
@@ -103,6 +110,7 @@ export const TagSelect = t.Partial(
     id: t.Boolean(),
     name: t.Boolean(),
     tips: t.Boolean(),
+    createdAt: t.Boolean(),
     _count: t.Boolean(),
   }),
 );
@@ -117,6 +125,9 @@ export const TagOrderBy = t.Partial(
       additionalProperties: true,
     }),
     name: t.Union([t.Literal("asc"), t.Literal("desc")], {
+      additionalProperties: true,
+    }),
+    createdAt: t.Union([t.Literal("asc"), t.Literal("desc")], {
       additionalProperties: true,
     }),
   }),

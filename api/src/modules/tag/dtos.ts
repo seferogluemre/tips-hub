@@ -1,9 +1,4 @@
 import { t } from "elysia";
-import {
-  TipPlain,
-  TipPlainInputCreate,
-  TipPlainInputUpdate,
-} from "../../../prisma/prismabox/Tip";
 import { ControllerHook } from "../../utils/controller-hook";
 import { errorResponseDto } from "../../utils/error-response";
 import {
@@ -12,80 +7,84 @@ import {
 } from "../../utils/pagination-helper";
 import { uuidValidation } from "../../utils/uuid-validation";
 
-export const tipResponseDto = t.Composite([
-  TipPlain,
-  t.Object({
-    tags: t.Array(
-      t.Object({
-        id: t.String(),
-        name: t.String(),
-      })
-    ),
-    author: t.Object({
-      id: t.String(),
-      name: t.String(),
-    }),
-  }),
-]);
+// Basit Tag modeli
+export const TagPlain = t.Object({
+  id: t.String(),
+  name: t.String(),
+  createdAt: t.Date(),
+});
 
-export const tipIndexDto = {
+// Basit Tag Yanıt DTO'su
+export const tagResponseDto = TagPlain;
+
+// Tag Oluşturma DTO'su
+export const TagPlainInputCreate = t.Object({
+  name: t.String(),
+});
+
+// Tag Güncelleme DTO'su
+export const TagPlainInputUpdate = t.Object({
+  name: t.Optional(t.String()),
+});
+
+export const tagIndexDto = {
   query: t.Object({
     ...paginationQueryDto.properties,
     search: t.Optional(t.String()),
   }),
   response: {
-    200: paginationResponseDto(tipResponseDto),
+    200: paginationResponseDto(tagResponseDto),
   },
   detail: {
     summary: "Index",
-    description: "Tip listesini döndürür",
+    description: "Tag listesini döndürür",
   },
 } satisfies ControllerHook;
 
-export const tipCreateDto = {
-  body: TipPlainInputCreate,
-  response: { 200: tipResponseDto, 422: errorResponseDto[422] },
+export const tagCreateDto = {
+  body: TagPlainInputCreate,
+  response: { 200: tagResponseDto, 422: errorResponseDto[422] },
   detail: {
     summary: "Create",
-    description: "Yeni tip oluşturur",
+    description: "Yeni tag oluşturur",
   },
 } satisfies ControllerHook;
 
-export const tipUpdateDto = {
+export const tagUpdateDto = {
   params: t.Object({
     uuid: uuidValidation,
   }),
-  body: TipPlainInputUpdate,
+  body: TagPlainInputUpdate,
   response: {
-    200: tipResponseDto,
+    200: tagResponseDto,
     404: errorResponseDto[404],
     422: errorResponseDto[422],
   },
   detail: {
     summary: "Update",
-    description: "Tip günceller",
+    description: "Tag günceller",
   },
 } satisfies ControllerHook;
 
-export const tipShowDto = {
+export const tagShowDto = {
   params: t.Object({
     uuid: uuidValidation,
   }),
-  response: { 200: tipResponseDto, 404: errorResponseDto[404] },
+  response: { 200: tagResponseDto, 404: errorResponseDto[404] },
   detail: {
     summary: "Show",
-    description: "Tip detaylarını döndürür",
+    description: "Tag detaylarını döndürür",
   },
 } satisfies ControllerHook;
 
-export const tipDestroyDto = {
-  ...tipShowDto,
+export const tagDestroyDto = {
+  ...tagShowDto,
   response: {
     200: t.Object({ message: t.String() }),
     404: errorResponseDto[404],
   },
   detail: {
     summary: "Destroy",
-    description: "Tip siler",
+    description: "Tag siler",
   },
 } satisfies ControllerHook;
