@@ -33,6 +33,18 @@ export const UserRelations = t.Object({
     }),
     { additionalProperties: true },
   ),
+  sessions: t.Array(
+    t.Object({
+      id: t.String(),
+      token: t.String(),
+      userId: t.String(),
+      createdAt: t.Date(),
+      updatedAt: t.Date(),
+      expiresAt: t.Date(),
+      revokedAt: __nullable__(t.Date()),
+    }),
+    { additionalProperties: true },
+  ),
 });
 
 export const UserPlainInputCreate = t.Object({
@@ -68,6 +80,16 @@ export const UserRelationsInputCreate = t.Object({
       ),
     }),
   ),
+  sessions: t.Optional(
+    t.Object({
+      connect: t.Array(
+        t.Object({
+          id: t.String(),
+        }),
+        { additionalProperties: true },
+      ),
+    }),
+  ),
 });
 
 export const UserRelationsInputUpdate = t.Partial(
@@ -89,6 +111,22 @@ export const UserRelationsInputUpdate = t.Partial(
       }),
     ),
     comments: t.Partial(
+      t.Object({
+        connect: t.Array(
+          t.Object({
+            id: t.String(),
+          }),
+          { additionalProperties: true },
+        ),
+        disconnect: t.Array(
+          t.Object({
+            id: t.String(),
+          }),
+          { additionalProperties: true },
+        ),
+      }),
+    ),
+    sessions: t.Partial(
       t.Object({
         connect: t.Array(
           t.Object({
@@ -173,13 +211,19 @@ export const UserSelect = t.Partial(
     password: t.Boolean(),
     tips: t.Boolean(),
     comments: t.Boolean(),
+    sessions: t.Boolean(),
     createdAt: t.Boolean(),
     _count: t.Boolean(),
   }),
 );
 
 export const UserInclude = t.Partial(
-  t.Object({ tips: t.Boolean(), comments: t.Boolean(), _count: t.Boolean() }),
+  t.Object({
+    tips: t.Boolean(),
+    comments: t.Boolean(),
+    sessions: t.Boolean(),
+    _count: t.Boolean(),
+  }),
 );
 
 export const UserOrderBy = t.Partial(

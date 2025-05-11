@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import prisma from "../../core/prisma";
 import { UserCreatePayload, UserUpdatePayload } from "./types";
 
@@ -11,6 +12,10 @@ export const UserService = {
       throw new Error("Email is required");
     }
 
+    if (!data.password) {
+      throw new Error("Password is required");
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email },
     });
@@ -19,10 +24,13 @@ export const UserService = {
       throw new Error("Email address is already in use");
     }
 
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
     const user = await prisma.user.create({
       data: {
         email: data.email,
         name: data.name,
+        password: hashedPassword,
       },
     });
     return {
@@ -107,7 +115,11 @@ export const UserService = {
       }
     }
 
-    const updateData: { email?: string; name?: string | null } = {};
+    const updateData: {
+      email?: string;
+      name?: string | null;
+      password?: string;
+    } = {};
 
     if (data.email !== undefined) {
       updateData.email = data.email;
@@ -115,6 +127,10 @@ export const UserService = {
 
     if (data.name !== undefined) {
       updateData.name = data.name;
+    }
+
+    if (data.password !== undefined) {
+      updateData.password = await bcrypt.hash(data.password, 10);
     }
 
     if (Object.keys(updateData).length === 0) {

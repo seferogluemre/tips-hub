@@ -23,7 +23,21 @@ model User {
   password  String?
   tips      Tip[] // Kullanıcının yazdığı tipler
   comments  Comment[] // Kullanıcının yaptığı yorumlar
+  sessions  Session[] // Kullanıcının oturum bilgileri
   createdAt DateTime  @default(now())
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  @@map("sessions")
 }
 
 model Tip {

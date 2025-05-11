@@ -18,6 +18,9 @@ export const errorMessageDto = t.Object(
 );
 
 export const errorResponseDto = {
+  400: t.Object({
+    message: t.String({ default: "Bad Request" }),
+  }),
   401: t.Object({
     message: t.String(),
   }),

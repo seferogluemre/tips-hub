@@ -30,6 +30,10 @@ export const UserPlainInputCreate = t.Object({
     error: "İsim en az 2 karakter olmalıdır",
     default: "",
   }),
+  password: t.String({
+    minLength: 6,
+    error: "Şifre en az 6 karakter olmalıdır",
+  }),
 });
 
 // User update DTO - güncelleme için her alan opsiyonel
@@ -44,6 +48,12 @@ export const UserPlainInputUpdate = t.Object({
     t.String({
       minLength: 2,
       error: "İsim en az 2 karakter olmalıdır",
+    })
+  ),
+  password: t.Optional(
+    t.String({
+      minLength: 6,
+      error: "Şifre en az 6 karakter olmalıdır",
     })
   ),
 });

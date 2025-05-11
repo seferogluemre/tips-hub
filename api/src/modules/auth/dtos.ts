@@ -30,11 +30,24 @@ export const registerInputDto = t.Object({
   }),
 });
 
-// Auth response DTO
-export const authResponseDto = t.Object({
+// Refresh Token DTO
+export const refreshTokenInputDto = t.Object({
+  token: t.String({
+    error: "Geçerli bir token sağlanmalıdır",
+  }),
+});
+
+// User DTO
+export const userResponseDto = t.Object({
   id: t.String(),
   email: t.String(),
   name: t.Optional(t.Nullable(t.String())),
+});
+
+// Auth response DTO
+export const authResponseDto = t.Object({
+  user: userResponseDto,
+  token: t.String(),
 });
 
 // Login controller
@@ -66,12 +79,26 @@ export const registerDto = {
 // Me controller
 export const meDto = {
   response: {
-    200: authResponseDto,
+    200: userResponseDto,
     401: errorResponseDto[401],
   },
   detail: {
     summary: "Me",
     description: "Mevcut kullanıcı bilgilerini getir",
+  },
+} satisfies ControllerHook;
+
+// Refresh Token controller
+export const refreshTokenDto = {
+  body: refreshTokenInputDto,
+  response: {
+    200: authResponseDto,
+    400: errorResponseDto[400],
+    401: errorResponseDto[401],
+  },
+  detail: {
+    summary: "Refresh Token",
+    description: "Token yenileme",
   },
 } satisfies ControllerHook;
 

@@ -1,4 +1,5 @@
 export * from "./User";
+export * from "./Session";
 export * from "./Tip";
 export * from "./Tag";
 export * from "./TipTag";

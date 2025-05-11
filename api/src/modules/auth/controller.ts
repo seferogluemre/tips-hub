@@ -1,44 +1,42 @@
 import { cookie } from "@elysiajs/cookie";
-import { jwt } from "@elysiajs/jwt";
 import { Elysia } from "elysia";
-import { loginDto, logoutDto, meDto, registerDto } from "./dtos";
-import { AuthService } from "./service";
+import {
+  authResponseDto,
+  loginDto,
+  logoutDto,
+  meDto,
+  refreshTokenDto,
+  registerDto,
+} from "./dtos";
+import { AuthService, SessionService } from "./service";
 
-// JWT ve cookie yapılandırması
-const SESSION_EXPIRY = 15 * 60 * 1000; // 15 dakika (milisaniye)
+// Session süresi (15 dakika - milisaniye cinsinden)
+const SESSION_EXPIRY = 15 * 60 * 1000; // 15 dakika
 const SESSION_EXPIRY_SECONDS = SESSION_EXPIRY / 1000; // saniye
-const JWT_SECRET =
-  process.env.JWT_SECRET || "super-secret-jwt-key-change-in-production";
 
 // Auth controller tanımı
 export const AuthController = new Elysia({ prefix: "/api/auth" })
   .use(cookie())
-  .use(
-    jwt({
-      name: "jwt",
-      secret: JWT_SECRET,
-      exp: SESSION_EXPIRY_SECONDS,
-    })
-  )
   .get(
     "/me",
-    async ({ cookie, jwt, set }) => {
-      const sessionCookie = cookie.session;
+    async ({ cookie, set }) => {
+      const sessionToken = cookie.session;
 
-      if (!sessionCookie) {
+      if (!sessionToken) {
         set.status = 401;
         return { message: "Oturum bulunamadı veya süresi doldu" };
       }
 
       try {
-        const payload = await jwt.verify(String(sessionCookie));
+        // Session token'ını doğrula
+        const userId = await SessionService.verify(String(sessionToken));
 
-        if (!payload || !payload.userId) {
+        if (!userId) {
           set.status = 401;
           return { message: "Geçersiz oturum" };
         }
 
-        const user = await AuthService.getUser(String(payload.userId));
+        const user = await AuthService.getUser(userId);
 
         if (!user) {
           set.status = 401;
@@ -61,12 +59,12 @@ export const AuthController = new Elysia({ prefix: "/api/auth" })
   )
   .post(
     "/register",
-    async ({ body, jwt, set }) => {
+    async ({ body, set }) => {
       try {
-        const user = await AuthService.register(body);
+        const userInfo = await AuthService.register(body);
 
-        // JWT token oluştur
-        const token = await jwt.sign({ userId: user.id });
+        // Session token oluştur
+        const token = await SessionService.create(userInfo.id);
 
         // Cookie'ye kaydet
         set.cookie = {
@@ -78,7 +76,11 @@ export const AuthController = new Elysia({ prefix: "/api/auth" })
           },
         };
 
-        return user;
+        // Response
+        return {
+          user: userInfo,
+          token,
+        };
       } catch (error: any) {
         if (error.message === "Bu e-posta adresi zaten kullanılıyor") {
           set.status = 422;
@@ -97,6 +99,10 @@ export const AuthController = new Elysia({ prefix: "/api/auth" })
     },
     {
       ...registerDto,
+      response: {
+        200: authResponseDto,
+        422: registerDto.response[422],
+      },
       detail: {
         ...registerDto.detail,
         tags: ["Auth"],
@@ -105,12 +111,12 @@ export const AuthController = new Elysia({ prefix: "/api/auth" })
   )
   .post(
     "/login",
-    async ({ body, jwt, set }) => {
+    async ({ body, set }) => {
       try {
-        const user = await AuthService.login(body);
+        const userInfo = await AuthService.login(body);
 
-        // JWT token oluştur
-        const token = await jwt.sign({ userId: user.id });
+        // Session token oluştur
+        const token = await SessionService.create(userInfo.id);
 
         // Cookie'ye kaydet
         set.cookie = {
@@ -122,7 +128,11 @@ export const AuthController = new Elysia({ prefix: "/api/auth" })
           },
         };
 
-        return user;
+        // Response
+        return {
+          user: userInfo,
+          token,
+        };
       } catch (error: any) {
         set.status = 401;
         return {
@@ -132,68 +142,85 @@ export const AuthController = new Elysia({ prefix: "/api/auth" })
     },
     {
       ...loginDto,
+      response: {
+        200: authResponseDto,
+        401: loginDto.response[401],
+      },
       detail: {
         ...loginDto.detail,
         tags: ["Auth"],
       },
     }
   )
-  .get(
+  .post(
     "/refresh",
-    async ({ cookie, jwt, set }) => {
-      const sessionCookie = cookie.session;
-
-      if (!sessionCookie) {
-        set.status = 401;
-        return { message: "Oturum bulunamadı veya süresi doldu" };
-      }
-
+    async ({ body, set }) => {
       try {
-        const payload = await jwt.verify(String(sessionCookie));
+        const { token } = body;
 
-        if (!payload || !payload.userId) {
-          set.status = 401;
-          return { message: "Geçersiz oturum" };
+        if (!token) {
+          set.status = 400;
+          return { message: "Token sağlanmalıdır" };
         }
 
-        const user = await AuthService.getUser(String(payload.userId));
+        // Mevcut token'ı doğrula
+        const userId = await SessionService.verify(token);
 
-        if (!user) {
+        if (!userId) {
+          set.status = 401;
+          return { message: "Geçersiz veya süresi dolmuş token" };
+        }
+
+        const userInfo = await AuthService.getUser(userId);
+
+        if (!userInfo) {
           set.status = 401;
           return { message: "Kullanıcı bulunamadı" };
         }
 
         // Yeni token oluştur
-        const token = await jwt.sign({ userId: user.id });
+        const newToken = await SessionService.create(userId);
+
+        // Eski token'ı iptal et
+        await SessionService.revoke(token);
 
         // Cookie'yi yenile
         set.cookie = {
           session: {
-            value: token,
+            value: newToken,
             httpOnly: true,
             maxAge: SESSION_EXPIRY_SECONDS,
             path: "/",
           },
         };
 
-        return user;
+        return {
+          user: userInfo,
+          token: newToken,
+        };
       } catch (error) {
         set.status = 401;
-        return { message: "Oturum bulunamadı veya süresi doldu" };
+        return { message: "Token yenileme başarısız" };
       }
     },
     {
-      ...meDto,
+      ...refreshTokenDto,
       detail: {
-        summary: "Refresh",
-        description: "Oturum süresini yenile",
+        ...refreshTokenDto.detail,
         tags: ["Auth"],
       },
     }
   )
   .post(
     "/logout",
-    async ({ set }) => {
+    async ({ cookie, set }) => {
+      const sessionToken = cookie.session;
+
+      if (sessionToken) {
+        // Session'ı iptal et
+        await SessionService.revoke(String(sessionToken));
+      }
+
       // Session cookie'sini sil
       set.cookie = {
         session: {
