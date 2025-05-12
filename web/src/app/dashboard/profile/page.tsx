@@ -27,22 +27,24 @@ import {
 import { profileFormSchema, ProfileFormValues } from "@/schemas/user.schema";
 import { UserTip } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const userId = searchParams.get("id");
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Always fetch current user profile as a fallback
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserId(localStorage.getItem("userId"));
+  }, []);
+
   const { data: currentUser, isLoading: isCurrentUserLoading } = useUserProfile(
     userId || ""
   );
 
-  // Fetch user by ID only if valid userId is provided
   const { data: userById, isLoading: isUserByIdLoading } = useUserById(
     userId || "",
     {
@@ -50,21 +52,12 @@ export default function ProfilePage() {
     }
   );
 
-  // Determine which user data to use
   const userData = userId && userById ? userById : currentUser;
   const isLoading = userId ? isUserByIdLoading : isCurrentUserLoading;
-
-  console.log("Current user data:", currentUser);
-  console.log("User by ID data:", userById);
-  console.log("Final user data to display:", userData);
-
-  // Logout mutation
   const logoutMutation = useLogout();
 
-  // Update profile mutation
   const updateProfileMutation = useUpdateProfile();
 
-  // Form setup
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -79,7 +72,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (userData) {
-      console.log("Setting form values with:", userData);
       form.reset({
         name: userData.name || "",
         email: userData.email || "",
@@ -101,7 +93,6 @@ export default function ProfilePage() {
     });
   };
 
-  // Handle logout
   const handleLogout = async () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
@@ -332,34 +323,6 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Debug information */}
-      {process.env.NODE_ENV !== "production" && (
-        <div className="mt-8 p-4 border border-gray-200 rounded-md">
-          <h3 className="font-medium mb-2">Debug Info</h3>
-          <pre className="text-xs overflow-auto bg-gray-50 p-2 rounded">
-            {JSON.stringify(
-              {
-                userId,
-                userDataSource: userId && userById ? "userById" : "currentUser",
-                userData: userData
-                  ? {
-                      id: userData.id,
-                      name: userData.name,
-                      email: userData.email,
-                      tipsCount: userData.tips?.length || 0,
-                    }
-                  : null,
-                isLoading,
-                isCurrentUserLoading,
-                isUserByIdLoading,
-              },
-              null,
-              2
-            )}
-          </pre>
-        </div>
-      )}
     </div>
   );
 }

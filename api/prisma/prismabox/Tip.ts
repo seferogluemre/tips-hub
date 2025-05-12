@@ -1,5 +1,7 @@
 import { t } from "elysia";
 
+import { __transformDate__ } from "./__transformDate__";
+
 import { __nullable__ } from "./__nullable__";
 
 export const TipPlain = t.Object({
@@ -20,7 +22,7 @@ export const TipRelations = t.Object({
   }),
   tags: t.Array(
     t.Object({ id: t.String(), tipId: t.String(), tagId: t.String() }),
-    { additionalProperties: true }
+    { additionalProperties: true },
   ),
   comments: t.Array(
     t.Object({
@@ -30,7 +32,7 @@ export const TipRelations = t.Object({
       authorId: t.String(),
       createdAt: t.Date(),
     }),
-    { additionalProperties: true }
+    { additionalProperties: true },
   ),
   bookmarks: t.Array(
     t.Object({
@@ -39,14 +41,13 @@ export const TipRelations = t.Object({
       tipId: t.String(),
       createdAt: t.Date(),
     }),
-    { additionalProperties: true }
+    { additionalProperties: true },
   ),
 });
 
 export const TipPlainInputCreate = t.Object({
   title: t.String(),
   content: t.String(),
-  authorId: t.String(),
 });
 
 export const TipPlainInputUpdate = t.Object({
@@ -66,9 +67,9 @@ export const TipRelationsInputCreate = t.Object({
         t.Object({
           id: t.String(),
         }),
-        { additionalProperties: true }
+        { additionalProperties: true },
       ),
-    })
+    }),
   ),
   comments: t.Optional(
     t.Object({
@@ -76,9 +77,9 @@ export const TipRelationsInputCreate = t.Object({
         t.Object({
           id: t.String(),
         }),
-        { additionalProperties: true }
+        { additionalProperties: true },
       ),
-    })
+    }),
   ),
   bookmarks: t.Optional(
     t.Object({
@@ -86,9 +87,9 @@ export const TipRelationsInputCreate = t.Object({
         t.Object({
           id: t.String(),
         }),
-        { additionalProperties: true }
+        { additionalProperties: true },
       ),
-    })
+    }),
   ),
 });
 
@@ -105,15 +106,15 @@ export const TipRelationsInputUpdate = t.Partial(
           t.Object({
             id: t.String(),
           }),
-          { additionalProperties: true }
+          { additionalProperties: true },
         ),
         disconnect: t.Array(
           t.Object({
             id: t.String(),
           }),
-          { additionalProperties: true }
+          { additionalProperties: true },
         ),
-      })
+      }),
     ),
     comments: t.Partial(
       t.Object({
@@ -121,15 +122,15 @@ export const TipRelationsInputUpdate = t.Partial(
           t.Object({
             id: t.String(),
           }),
-          { additionalProperties: true }
+          { additionalProperties: true },
         ),
         disconnect: t.Array(
           t.Object({
             id: t.String(),
           }),
-          { additionalProperties: true }
+          { additionalProperties: true },
         ),
-      })
+      }),
     ),
     bookmarks: t.Partial(
       t.Object({
@@ -137,17 +138,17 @@ export const TipRelationsInputUpdate = t.Partial(
           t.Object({
             id: t.String(),
           }),
-          { additionalProperties: true }
+          { additionalProperties: true },
         ),
         disconnect: t.Array(
           t.Object({
             id: t.String(),
           }),
-          { additionalProperties: true }
+          { additionalProperties: true },
         ),
-      })
+      }),
     ),
-  })
+  }),
 );
 
 export const TipWhere = t.Partial(
@@ -164,10 +165,10 @@ export const TipWhere = t.Partial(
           authorId: t.String(),
           createdAt: t.Date(),
         },
-        { additionalProperties: true }
+        { additionalProperties: true },
       ),
-    { $id: "Tip" }
-  )
+    { $id: "Tip" },
+  ),
 );
 
 export const TipWhereUnique = t.Recursive(
@@ -176,7 +177,7 @@ export const TipWhereUnique = t.Recursive(
       [
         t.Partial(
           t.Object({ id: t.String() }, { additionalProperties: true }),
-          { additionalProperties: true }
+          { additionalProperties: true },
         ),
         t.Union([t.Object({ id: t.String() })], { additionalProperties: true }),
         t.Partial(
@@ -185,7 +186,7 @@ export const TipWhereUnique = t.Recursive(
             NOT: t.Union([Self, t.Array(Self, { additionalProperties: true })]),
             OR: t.Array(Self, { additionalProperties: true }),
           }),
-          { additionalProperties: true }
+          { additionalProperties: true },
         ),
         t.Partial(
           t.Object({
@@ -194,12 +195,12 @@ export const TipWhereUnique = t.Recursive(
             content: t.String(),
             authorId: t.String(),
             createdAt: t.Date(),
-          })
+          }),
         ),
       ],
-      { additionalProperties: true }
+      { additionalProperties: true },
     ),
-  { $id: "Tip" }
+  { $id: "Tip" },
 );
 
 export const TipSelect = t.Partial(
@@ -214,7 +215,7 @@ export const TipSelect = t.Partial(
     bookmarks: t.Boolean(),
     createdAt: t.Boolean(),
     _count: t.Boolean(),
-  })
+  }),
 );
 
 export const TipInclude = t.Partial(
@@ -224,7 +225,7 @@ export const TipInclude = t.Partial(
     comments: t.Boolean(),
     bookmarks: t.Boolean(),
     _count: t.Boolean(),
-  })
+  }),
 );
 
 export const TipOrderBy = t.Partial(
@@ -244,7 +245,7 @@ export const TipOrderBy = t.Partial(
     createdAt: t.Union([t.Literal("asc"), t.Literal("desc")], {
       additionalProperties: true,
     }),
-  })
+  }),
 );
 
 export const Tip = t.Composite([TipPlain, TipRelations]);

@@ -4,18 +4,6 @@ import { UserCreatePayload, UserUpdatePayload } from "./types";
 
 export const UserService = {
   async create(data: UserCreatePayload) {
-    if (!data.name || data.name.trim() === "") {
-      throw new Error("Name is required");
-    }
-
-    if (!data.email || data.email.trim() === "") {
-      throw new Error("Email is required");
-    }
-
-    if (!data.password) {
-      throw new Error("Password is required");
-    }
-
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email },
     });
@@ -70,20 +58,8 @@ export const UserService = {
         email: true,
         name: true,
         createdAt: true,
-        tips: {
-          select: {
-            id: true,
-            title: true,
-            createdAt: true,
-          },
-        },
-        comments: {
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-          },
-        },
+        tips: true,
+        comments: true,
       },
     });
 

@@ -20,9 +20,7 @@ export const useUserById = (id: string, options?: { enabled?: boolean }) => {
       }
 
       try {
-        console.log("Fetching user with ID:", id);
         const data = await userService.getUserById(id);
-        console.log("API Response for user:", data);
         return data;
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -62,7 +60,6 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: () => userService.logout(),
     onSuccess: () => {
-      // Clear all queries from cache
       queryClient.clear();
     },
   });

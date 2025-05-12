@@ -24,7 +24,7 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
   )
   .derive(async ({ cookie, jwt }) => {
     // Session cookie'sini kontrol et
-    const sessionCookie = cookie.session as string | undefined;
+    const sessionCookie = cookie.session as unknown as string | undefined;
 
     if (!sessionCookie) {
       return { userId: null };
@@ -73,7 +73,6 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
   .post(
     "/",
     async ({ body, userId, set }) => {
-      // Kullanıcı giriş yapmamış
       if (!userId) {
         set.status = 401;
         return {
@@ -89,7 +88,6 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
         });
         return comment;
       } catch (error: any) {
-        // Specific error handling
         if (error.message === "Tip not found") {
           set.status = 422;
           return {

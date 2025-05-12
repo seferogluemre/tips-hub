@@ -7,12 +7,25 @@ import {
 } from "../../utils/pagination-helper";
 import { uuidValidation } from "../../utils/uuid-validation";
 
-// User model - name alanı nullable olarak tanımlandı (veritabanı modeline uygun olarak)
 export const UserPlain = t.Object({
   id: t.String(),
   email: t.String(),
   name: t.Optional(t.Nullable(t.String())),
   createdAt: t.Date(),
+  tips: t.Array(
+    t.Object({
+      id: t.String(),
+      title: t.String(),
+      createdAt: t.Date(),
+    })
+  ),
+  comments: t.Array(
+    t.Object({
+      id: t.String(),
+      content: t.String(),
+      createdAt: t.Date(),
+    })
+  ),
 });
 
 // User response DTO

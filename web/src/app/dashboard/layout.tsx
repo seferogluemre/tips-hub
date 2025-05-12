@@ -18,7 +18,6 @@ export default function DashboardLayout({
   const router = useRouter();
   const logoutMutation = useLogout();
 
-  // Giriş yapmamış kullanıcıları login sayfasına yönlendir
   useAuthRedirect({ redirectUnauthenticatedTo: "/login" });
 
   const navItems = [

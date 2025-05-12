@@ -6,11 +6,6 @@ export const CommentService = {
     const tip = await prisma.tip.findUnique({
       where: { id: data.tipId },
     });
-
-    if (!tip) {
-      throw new Error("Tip not found");
-    }
-
     const user = await prisma.user.findUnique({
       where: { id: data.authorId },
     });
