@@ -23,21 +23,14 @@ export const useAuthRedirect = ({
 
     // Kullanıcı giriş yapmışsa ve yönlendirme hedefi belirtilmişse
     if (isAuthenticated && redirectAuthenticatedTo) {
-      console.log(
-        `Kullanıcı giriş yapmış, yönlendiriliyor: ${redirectAuthenticatedTo}`
-      );
       router.push(redirectAuthenticatedTo);
     }
 
     // Kullanıcı giriş yapmamışsa ve yönlendirme hedefi belirtilmişse
     if (!isAuthenticated && redirectUnauthenticatedTo) {
-      console.log(
-        `Kullanıcı giriş yapmamış, yönlendiriliyor: ${redirectUnauthenticatedTo}`
-      );
       router.push(redirectUnauthenticatedTo);
     }
   }, [redirectAuthenticatedTo, redirectUnauthenticatedTo, router]);
 
-  // Kullanıcının giriş durumunu döndür
   return { isAuthenticated: authService.isAuthenticated() };
 };

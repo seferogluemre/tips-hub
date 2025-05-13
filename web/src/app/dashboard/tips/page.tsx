@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTips } from "@/hooks/use-tips";
+import { formatTimeAgo } from "@/lib/date-helper";
+import { getTagName } from "@/lib/tag-string-helper";
 import { useTipFilterStore } from "@/store/tip-filter.store";
+import { TagType } from "@/types";
 import { MessageSquare, Search, Share2, ThumbsUp, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,7 +23,6 @@ import { useEffect, useState } from "react";
 export default function TipsPage() {
   const router = useRouter();
 
-  // Zustand store'dan filtreleme durumunu al
   const { search, tag, sort, setSearch, setTag, setSort, resetFilters } =
     useTipFilterStore();
 
@@ -36,12 +38,10 @@ export default function TipsPage() {
     sort,
   });
 
-  // Komponent mount olduğunda lokal state'i store'dan gelen değerle güncelle
   useEffect(() => {
     setSearchQuery(search);
   }, [search]);
 
-  // URL'i filtrelere göre güncelle
   const updateUrl = () => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -56,15 +56,14 @@ export default function TipsPage() {
     refetch();
   }, [search, tag, sort]);
 
-  // Arama formunun gönderilmesi
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchQuery);
   };
 
-  // Tag'e tıklandığında
-  const handleTagClick = (selectedTag: string) => {
-    setTag(selectedTag);
+  const handleTagClick = (selectedTag: TagType) => {
+    const tagName = getTagName(selectedTag);
+    setTag(tagName);
   };
 
   return (
@@ -153,7 +152,7 @@ export default function TipsPage() {
         </div>
       ) : (
         <>
-          {tips && tips.length === 0 ? (
+          {tips?.data?.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Sonuç bulunamadı.</p>
               <Button
@@ -177,7 +176,7 @@ export default function TipsPage() {
                       <div>
                         <p className="font-medium">{tip?.author?.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {tip?.createdAt}
+                          {tip?.createdAt ? formatTimeAgo(tip.createdAt) : ""}
                         </p>
                       </div>
                     </div>
@@ -195,15 +194,16 @@ export default function TipsPage() {
                       {tip?.content}
                     </CardDescription>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {tip?.tags?.map((tag) => (
-                        <button
-                          key={tag}
-                          className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
-                          onClick={() => handleTagClick(tag)}
-                        >
-                          {tag}
-                        </button>
-                      ))}
+                      {Array.isArray(tip?.tags) &&
+                        tip.tags.map((tag, index) => (
+                          <button
+                            key={index}
+                            className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
+                            onClick={() => handleTagClick(tag)}
+                          >
+                            {getTagName(tag)}
+                          </button>
+                        ))}
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between pt-3 border-t">
@@ -211,13 +211,13 @@ export default function TipsPage() {
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <ThumbsUp className="h-4 w-4" />
                       </Button>
-                      <span className="text-sm">{tip?.likes}</span>
+                      <span className="text-sm">{tip?.likes || 0}</span>
                       <Link href={`/dashboard/tips/${tip.id}#comments`}>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MessageSquare className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <span className="text-sm">{tip?.comments}</span>
+                      <span className="text-sm">{tip?.comments || 0}</span>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
                       <Share2 className="h-4 w-4" />

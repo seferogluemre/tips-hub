@@ -43,7 +43,6 @@ export const UserController = new Elysia({ prefix: "/api/users" })
         const user = await UserService.create(body);
         return user;
       } catch (error: any) {
-        // Validasyon ve alan hataları için spesifik mesajlar
         if (error.message === "Name is required") {
           return {
             errors: [{ message: error.message, field: "name" }],
@@ -58,7 +57,6 @@ export const UserController = new Elysia({ prefix: "/api/users" })
           };
         }
 
-        // Email unique kontrolü
         if (error.message === "Email address is already in use") {
           return {
             errors: [{ message: error.message, field: "email" }],
@@ -66,7 +64,6 @@ export const UserController = new Elysia({ prefix: "/api/users" })
           };
         }
 
-        // Generic error handling
         return {
           errors: [{ message: "Failed to create user", field: "body" }],
           message: "Failed to create user",

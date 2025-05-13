@@ -17,7 +17,12 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
       return {
         data: tips.map((tip) => ({
           ...tip,
-          tags: tip.tags.map((t) => t.tag),
+          tags: tip.tags
+            .filter((t) => t && t.name && t.id)
+            .map((t) => ({
+              id: t.id || "",
+              name: t.name || "",
+            })),
           author: {
             id: tip.author.id,
             name: tip.author.name || "",
@@ -43,26 +48,21 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
     "/",
     async ({ body, userId, set }) => {
       try {
-        console.log("TIP CREATE REQUEST:", {
-          body,
-          userId,
-          hasAuthorIdInBody: !!body?.authorId,
-          bodyKeys: Object.keys(body || {}),
-        });
-
         const tipWithAuthor = {
           ...body,
           authorId: userId || body.authorId, // Try to use userId from middleware first, then fall back to body
         };
 
-        console.log("Creating tip with data:", tipWithAuthor);
-
         const tip = await TipService.create(tipWithAuthor);
-        console.log("Tip created:", tip);
 
         return {
           ...tip,
-          tags: tip.tags.map((t) => t.tag),
+          tags: tip.tags
+            .filter((t) => t && t.tag && t.tag.id && t.tag.name)
+            .map((t) => ({
+              id: t.tag.id || "",
+              name: t.tag.name || "",
+            })),
           author: {
             id: tip.author.id,
             name: tip.author.name || "",
@@ -90,12 +90,16 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
   .get(
     "/my-tips",
     async ({ userId }) => {
-      // Kullanıcının kendi ipuçlarını getir
       const tips = await TipService.getByAuthor(userId);
       return {
         data: tips.map((tip) => ({
           ...tip,
-          tags: tip.tags.map((t) => t.tag),
+          tags: tip.tags
+            .filter((t) => t && t.id && t.name)
+            .map((t) => ({
+              id: t.id || "",
+              name: t.name || "",
+            })),
           author: {
             id: tip.author.id,
             name: tip.author.name || "",
@@ -124,7 +128,12 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
       }
       return {
         ...tip,
-        tags: tip.tags.map((t) => t.tag),
+        tags: tip.tags
+          .filter((t) => t && t.tag && t.tag.id && t.tag.name)
+          .map((t) => ({
+            id: t.tag.id || "",
+            name: t.tag.name || "",
+          })),
         author: {
           id: tip.author.id,
           name: tip.author.name || "",
@@ -148,7 +157,12 @@ export const TipController = new Elysia({ prefix: "/api/tips" })
       }
       return {
         ...tip,
-        tags: tip.tags.map((t) => t.tag),
+        tags: tip.tags
+          .filter((t) => t && t.tag && t.tag.id && t.tag.name)
+          .map((t) => ({
+            id: t.tag.id || "",
+            name: t.tag.name || "",
+          })),
         author: {
           id: tip.author.id,
           name: tip.author.name || "",

@@ -11,11 +11,19 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTips } from "@/hooks/use-tips";
+import { formatTimeAgo } from "@/lib/date-helper";
 import { MessageSquare, Share2, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
   const { data: tips, isLoading } = useTips();
+
+  const cleanedData = tips?.data?.map((tip) => ({
+    ...tip,
+    tags: Array.isArray(tip.tags)
+      ? tip.tags.map((tag) => tag || { id: "unknown", name: "Etiket" })
+      : [],
+  }));
 
   return (
     <>
@@ -78,7 +86,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tips?.data?.map((tip) => (
+          {cleanedData?.map((tip) => (
             <Card key={tip.id} className="overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
@@ -88,7 +96,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="font-medium">{tip?.author?.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {tip?.createdAt}
+                      {tip?.createdAt ? formatTimeAgo(tip.createdAt) : ""}
                     </p>
                   </div>
                 </div>
@@ -99,12 +107,12 @@ export default function DashboardPage() {
                   {tip?.content}
                 </CardDescription>
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {tip?.tags?.map((tag) => (
+                  {tip?.tags?.map((tag, index) => (
                     <span
-                      key={tag}
+                      key={index}
                       className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
                     >
-                      {tag}
+                      {tag?.name || "Etiket"}
                     </span>
                   ))}
                 </div>

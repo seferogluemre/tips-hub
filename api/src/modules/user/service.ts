@@ -74,7 +74,7 @@ export const UserService = {
   async update(id: string, data: UserUpdatePayload) {
     const currentUser = await prisma.user.findUnique({
       where: { id },
-      select: { email: true, name: true },
+      include: { tips: true, comments: true },
     });
 
     if (!currentUser) {
@@ -97,25 +97,25 @@ export const UserService = {
       password?: string;
     } = {};
 
-    if (data.email !== undefined) {
-      updateData.email = data.email;
-    }
-
-    if (data.name !== undefined) {
-      updateData.name = data.name;
-    }
-
-    if (data.password !== undefined) {
-      updateData.password = await bcrypt.hash(data.password, 10);
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return this.getById(id);
-    }
-
     const user = await prisma.user.update({
       where: { id },
-      data: updateData,
+      data,
+      include: {
+        tips: {
+          select: {
+            id: true,
+            createdAt: true,
+            title: true,
+          },
+        },
+        comments: {
+          select: {
+            id: true,
+            createdAt: true,
+            content: true,
+          },
+        },
+      },
     });
 
     return {

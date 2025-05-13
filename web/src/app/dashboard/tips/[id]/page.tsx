@@ -4,42 +4,22 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { dummyComments } from "@/data/dummyComments";
+import { similarTips } from "@/data/similarTips";
+import { formatTimeAgo } from "@/lib/date-helper";
+import { getTagString } from "@/lib/tag-string-helper";
+import { tipService } from "@/services/tip.service";
+import { Tip } from "@/types";
 import Link from "next/link";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 
 export default function TipDetailPage({ params }: { params: { id: string } }) {
-  // In a real implementation, we would fetch the tip data using the params.id
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      author: "Zeynep Kaya",
-      avatar: "ZK",
-      date: "1 gün önce",
-      content:
-        "Harika bir ipucu! useEffect hook'unu kullanırken dependency array'i doğru şekilde kullanmak gerçekten çok önemli. Benim de karşılaştığım birçok performans sorununu çözdü.",
-      likes: 8,
-    },
-    {
-      id: 2,
-      author: "Ahmet Yılmaz",
-      avatar: "AY",
-      date: "1 gün önce",
-      content:
-        "Katılıyorum. Ayrıca useCallback ve useMemo kullanımı da bu tür sorunları önlemede çok etkili.",
-      likes: 3,
-    },
-    {
-      id: 3,
-      author: "Mehmet Demir",
-      avatar: "MD",
-      date: "12 saat önce",
-      content:
-        "Cleanup fonksiyonları hakkında daha fazla örnek görmek isterim. Özellikle WebSocket bağlantıları ve event listener'lar için nasıl kullanılabilir?",
-      likes: 5,
-    },
-  ]);
+  const [comments, setComments] = useState(dummyComments);
 
   const [newComment, setNewComment] = useState("");
+  const [tips, setTips] = useState<Tip | null>(null);
+  const tipId = params.id;
+
   const { toast } = useToast();
 
   const handleAddComment = () => {
@@ -70,97 +50,57 @@ export default function TipDetailPage({ params }: { params: { id: string } }) {
     });
   };
 
+  useEffect(() => {
+    const getTipData = async () => {
+      const response = await tipService.getTipById(tipId);
+      setTips(response);
+    };
+    getTipData();
+  }, [tipId]);
+
   const handleCommentChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setNewComment(e.target.value);
   };
 
-  const similarTips = [
-    {
-      id: 1,
-      author: "Zeynep Kaya",
-      avatar: "ZK",
-      date: "3 gün önce",
-      title: "React useMemo Hook'u ile Performans Optimizasyonu",
-      tags: ["React", "Hooks", "+1"],
-    },
-    {
-      id: 2,
-      author: "Mehmet Demir",
-      avatar: "MD",
-      date: "1 hafta önce",
-      title: "React useCallback Hook'u Kullanım Örnekleri",
-      tags: ["React", "Hooks", "+1"],
-    },
-    {
-      id: 3,
-      author: "Ayşe Yıldız",
-      avatar: "AY",
-      date: "2 hafta önce",
-      title: "React Custom Hook Oluşturma Rehberi",
-      tags: ["React", "Hooks", "+1"],
-    },
-  ];
-
   return (
     <div className="container mx-auto py-6 space-y-8">
-      {/* Tip Content Section */}
       <div className="bg-card rounded-lg shadow-sm border p-6">
-        {/* Author Info and Meta */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Avatar className="w-10 h-10">
-              <AvatarFallback>AY</AvatarFallback>
+              <AvatarFallback>
+                {tips?.author?.name?.slice(0, 2) || "TP"}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">Ahmet Yılmaz</p>
+              <p className="font-medium">{tips?.author?.name}</p>
               <p className="text-sm text-muted-foreground">
-                Senior React Developer
+                {tips?.author?.name}
               </p>
             </div>
           </div>
           <div className="text-sm text-muted-foreground text-right">
-            <div>Paylaşım: 2 gün önce</div>
-            <div>Güncelleme: 1 gün önce</div>
+            <div>
+              Paylaşım: {tips?.createdAt ? formatTimeAgo(tips.createdAt) : ""}
+            </div>
+            {tips?.createdAt !== tips?.updatedAt && tips?.updatedAt && (
+              <div>Güncelleme: {formatTimeAgo(tips.updatedAt)}</div>
+            )}
           </div>
         </div>
 
-        {/* Tip Title */}
-        <h1 className="text-2xl font-bold mb-4">
-          React useEffect Hook&apos;unu Optimize Etme Teknikleri
-        </h1>
+        <h1 className="text-2xl font-bold mb-4">{tips?.title}</h1>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <Link
-            href="/dashboard/tips?tag=React"
-            className="bg-secondary text-secondary-foreground text-sm px-3 py-1 rounded-full"
-          >
-            React
-          </Link>
-          <Link
-            href="/dashboard/tips?tag=Hooks"
-            className="bg-secondary text-secondary-foreground text-sm px-3 py-1 rounded-full"
-          >
-            Hooks
-          </Link>
-          <Link
-            href="/dashboard/tips?tag=Performance"
-            className="bg-secondary text-secondary-foreground text-sm px-3 py-1 rounded-full"
-          >
-            Performance
-          </Link>
-          <Link
-            href="/dashboard/tips?tag=JavaScript"
-            className="bg-secondary text-secondary-foreground text-sm px-3 py-1 rounded-full"
-          >
-            JavaScript
-          </Link>
-          <Link
-            href="/dashboard/tips?tag=Frontend"
-            className="bg-secondary text-secondary-foreground text-sm px-3 py-1 rounded-full"
-          >
-            Frontend
-          </Link>
+          {tips?.tags?.map((tag, index) => (
+            <Link
+              key={index}
+              href="/dashboard/tips?tag=React"
+              className="bg-secondary text-secondary-foreground text-sm px-3 py-1 rounded-full"
+            >
+              {getTagString(tag)}
+            </Link>
+          ))}
         </div>
 
         {/* Tip Content */}
@@ -244,7 +184,7 @@ const ExampleComponent = ({ userId }) => {
                 </Avatar>
                 <span className="text-sm">{tip.author}</span>
                 <span className="text-xs text-muted-foreground">
-                  • {tip.date}
+                  • {formatTimeAgo(tip.date)}
                 </span>
               </div>
               <h3 className="font-medium mb-2">{tip.title}</h3>
@@ -254,7 +194,7 @@ const ExampleComponent = ({ userId }) => {
                     key={index}
                     className="bg-secondary/50 text-secondary-foreground text-xs px-2 py-0.5 rounded-full"
                   >
-                    {tag}
+                    {getTagString(tag)}
                   </span>
                 ))}
               </div>
@@ -300,7 +240,7 @@ const ExampleComponent = ({ userId }) => {
                   </Avatar>
                   <span className="font-medium">{comment.author}</span>
                   <span className="text-xs text-muted-foreground">
-                    {comment.date}
+                    {formatTimeAgo(comment.date)}
                   </span>
                 </div>
                 <button className="text-sm text-muted-foreground">•••</button>

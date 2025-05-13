@@ -1,3 +1,8 @@
+export type Tag = {
+  id: string;
+  name: string;
+};
+
 // User related types
 export interface User {
   id: string;
@@ -26,12 +31,13 @@ export interface Tip {
   id: string;
   title: string;
   content: string;
-  tags: string[];
+  tags: (Tag | string)[];
   author: {
     id: string;
     name: string;
   };
   createdAt: string;
+  updatedAt?: string;
   likes: number;
   comments: number;
 }
@@ -63,6 +69,7 @@ export interface CreateTipParams {
 }
 
 export interface ApiResponse<T> {
+  token(arg0: string, token: any): unknown;
   data: T;
   message: string;
   status: number;
@@ -77,3 +84,10 @@ export interface PaginatedResponse<T> {
     perPage: number;
   };
 }
+
+export type TagType =
+  | {
+      id?: string;
+      name?: string;
+    }
+  | string;

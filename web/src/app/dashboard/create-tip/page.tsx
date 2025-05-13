@@ -34,7 +34,6 @@ export default function CreateTipPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Giriş yapmamış kullanıcıları login sayfasına yönlendir
   useAuthRedirect({ redirectUnauthenticatedTo: "/login" });
 
   const { resetFilters } = useTipFilterStore();
