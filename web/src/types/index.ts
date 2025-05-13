@@ -55,6 +55,7 @@ export interface Comment {
 // API request/response types
 export interface GetTipsParams {
   tag?: string;
+  tags?: string;
   sort?: "newest" | "popular";
   search?: string;
   page?: number;

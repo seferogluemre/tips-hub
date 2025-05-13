@@ -4,7 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 
 export const useTips = (params?: GetTipsParams) => {
   return useQuery<ApiResponse<Tip[]>, Error>({
-    queryKey: ["tips", params?.tag, params?.sort, params?.search, params?.page],
+    queryKey: [
+      "tips",
+      params?.tag,
+      params?.tags,
+      params?.sort,
+      params?.search,
+      params?.page,
+    ],
     queryFn: () => tipService.getTips(params),
   });
 };

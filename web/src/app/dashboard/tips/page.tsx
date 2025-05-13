@@ -10,11 +10,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
 import { useTips } from "@/hooks/use-tips";
 import { formatTimeAgo } from "@/lib/date-helper";
 import { getTagName } from "@/lib/tag-string-helper";
 import { useTipFilterStore } from "@/store/tip-filter.store";
-import { TagType } from "@/types";
+import { TagType, Tip } from "@/types";
 import { MessageSquare, Search, Share2, ThumbsUp, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,11 +23,22 @@ import { useEffect, useState } from "react";
 
 export default function TipsPage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const MAX_TAGS = 3;
 
-  const { search, tag, sort, setSearch, setTag, setSort, resetFilters } =
-    useTipFilterStore();
+  const {
+    search,
+    tags,
+    sort,
+    setSearch,
+    addTag,
+    removeTag,
+    setSort,
+    resetFilters,
+  } = useTipFilterStore();
 
   const [searchQuery, setSearchQuery] = useState(search);
+  const [filteredTips, setFilteredTips] = useState<Tip[]>([]);
 
   const {
     data: tips,
@@ -34,7 +46,7 @@ export default function TipsPage() {
     refetch,
   } = useTips({
     search,
-    tag,
+    tags: tags.join(","),
     sort,
   });
 
@@ -42,10 +54,42 @@ export default function TipsPage() {
     setSearchQuery(search);
   }, [search]);
 
+  useEffect(() => {
+    if (tips?.data) {
+      if (searchQuery.trim() === "" && tags.length === 0) {
+        setFilteredTips(tips.data);
+      } else {
+        const filtered = tips.data.filter((tip: Tip) => {
+          const matchesSearch =
+            searchQuery.trim() === "" ||
+            tip.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            tip.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            tip.tags.some((tipTag: TagType) =>
+              getTagName(tipTag)
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase())
+            );
+
+          const matchesTags =
+            tags.length === 0 ||
+            tags.some((tag) =>
+              tip.tags.some(
+                (tipTag: TagType) =>
+                  getTagName(tipTag).toLowerCase() === tag.toLowerCase()
+              )
+            );
+
+          return matchesSearch && matchesTags;
+        });
+        setFilteredTips(filtered);
+      }
+    }
+  }, [searchQuery, tags, tips?.data]);
+
   const updateUrl = () => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    if (tag) params.set("tag", tag);
+    if (tags.length > 0) params.set("tags", tags.join(","));
     if (sort) params.set("sort", sort);
 
     router.push(`/dashboard/tips?${params.toString()}`);
@@ -54,16 +98,32 @@ export default function TipsPage() {
   useEffect(() => {
     updateUrl();
     refetch();
-  }, [search, tag, sort]);
+  }, [search, tags, sort]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchQuery);
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+  };
+
   const handleTagClick = (selectedTag: TagType) => {
     const tagName = getTagName(selectedTag);
-    setTag(tagName);
+    if (tags.includes(tagName)) return;
+
+    if (tags.length >= MAX_TAGS) {
+      toast({
+        title: "Etiket sınırına ulaşıldı",
+        description: `En fazla ${MAX_TAGS} etiket ekleyebilirsiniz.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addTag(tagName);
   };
 
   return (
@@ -83,7 +143,7 @@ export default function TipsPage() {
           <Input
             placeholder="İpuçlarını ara..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
           />
           <Button type="submit" size="icon">
             <Search className="h-4 w-4" />
@@ -102,20 +162,25 @@ export default function TipsPage() {
           </select>
         </div>
 
-        {tag && (
-          <div className="flex items-center gap-2">
+        {tags.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm">Filtre:</span>
-            <div className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs flex items-center gap-1">
-              {tag}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-4 w-4 ml-1"
-                onClick={() => setTag("")}
+            {tags.map((tag) => (
+              <div
+                key={tag}
+                className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs flex items-center gap-1"
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
+                {tag}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 ml-1"
+                  onClick={() => removeTag(tag)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -152,13 +217,17 @@ export default function TipsPage() {
         </div>
       ) : (
         <>
-          {tips?.data?.length === 0 ? (
+          {filteredTips?.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Sonuç bulunamadı.</p>
               <Button
                 variant="link"
                 onClick={() => {
                   resetFilters();
+                  setSearchQuery("");
+                  if (tips?.data) {
+                    setFilteredTips(tips.data);
+                  }
                 }}
               >
                 Filtreleri Temizle
@@ -166,7 +235,7 @@ export default function TipsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tips?.data?.map((tip) => (
+              {filteredTips?.map((tip) => (
                 <Card key={tip.id} className="overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-3">
