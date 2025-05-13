@@ -8,6 +8,7 @@ import { dummyComments } from "@/data/dummyComments";
 import { similarTips } from "@/data/similarTips";
 import { formatTimeAgo } from "@/lib/date-helper";
 import { getTagString } from "@/lib/tag-string-helper";
+import app from "@/services/api";
 import { tipService } from "@/services/tip.service";
 import { Tip } from "@/types";
 import Link from "next/link";
@@ -49,6 +50,30 @@ export default function TipDetailPage({ params }: { params: { id: string } }) {
       description: "Yorumunuz eklendi.",
     });
   };
+
+  useEffect(() => {
+    const getComments = async () => {
+      const { data } = await app.api.comments.get({
+        query: {
+          tipId: tipId,
+        },
+      });
+
+      // API yanıtını doğru formata dönüştür
+      if (data?.data) {
+        const formattedComments = data.data.map((comment) => ({
+          id: Number(comment.id),
+          author: "Kullanıcı", // Daha sonra gerçek kullanıcı adıyla değiştirilebilir
+          avatar: "K",
+          date: new Date(comment.createdAt).toISOString(),
+          content: comment.content,
+          likes: 0,
+        }));
+        setComments(formattedComments);
+      }
+    };
+    getComments();
+  }, [tipId]);
 
   useEffect(() => {
     const getTipData = async () => {
@@ -133,7 +158,7 @@ export default function TipDetailPage({ params }: { params: { id: string } }) {
 
           <p className="mt-4">İşte bir örnek:</p>
 
-          <pre className="bg-muted p-4 rounded-md overflow-x-auto mt-4">
+          {/* <pre className="bg-muted p-4 rounded-md overflow-x-auto mt-4">
             <code>
               {`import { useState, useEffect, useCallback } from 'react';
 
@@ -162,7 +187,7 @@ const ExampleComponent = ({ userId }) => {
   return <div>{userData.name}</div>;
 };`}
             </code>
-          </pre>
+          </pre> */}
         </div>
       </div>
 

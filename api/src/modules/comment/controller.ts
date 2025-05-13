@@ -81,7 +81,6 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
       }
 
       try {
-        // Mevcut kullanıcı ID'sini authorId olarak kullan
         const comment = await CommentService.create({
           ...body,
           authorId: userId,
