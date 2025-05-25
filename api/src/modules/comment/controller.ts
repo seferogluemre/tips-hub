@@ -10,7 +10,6 @@ import {
 } from "./dtos";
 import { CommentService } from "./service";
 
-// JWT secret - controller içinde auth işlemleri için
 const JWT_SECRET =
   process.env.JWT_SECRET || "super-secret-jwt-key-change-in-production";
 
@@ -22,23 +21,33 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
       secret: JWT_SECRET,
     })
   )
-  .derive(async ({ cookie, jwt }) => {
-    // Session cookie'sini kontrol et
+  .derive(async ({ cookie, jwt, request }) => {
     const sessionCookie = cookie.session as unknown as string | undefined;
 
-    if (!sessionCookie) {
-      return { userId: null };
+    if (sessionCookie) {
+      try {
+        const payload = await jwt.verify(sessionCookie);
+        if (payload?.userId) {
+          return { userId: payload.userId as string };
+        }
+      } catch (error) {
+        // Cookie geçersizse devam et
+      }
     }
 
-    try {
-      const payload = await jwt.verify(sessionCookie);
-      if (!payload || !payload.userId) {
-        return { userId: null };
-      }
-      return { userId: payload.userId as string };
-    } catch (error) {
-      return { userId: null };
+    // 2. Authorization header'dan Bearer token kontrol et
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader;
+      try {
+        const payload = await jwt.verify(token);
+        if (payload?.userId) {
+          return { userId: payload.userId as string };
+        }
+      } catch (error) {}
     }
+
+    return { userId: null };
   })
   .get(
     "/",
@@ -115,7 +124,6 @@ export const CommentController = new Elysia({ prefix: "/api/comments" })
       body: {
         content: commentCreateDto.body.properties.content,
         tipId: commentCreateDto.body.properties.tipId,
-        // authorId artık gerekli değil, otomatik ekleniyor
       },
       response: commentCreateDto.response,
       detail: {
